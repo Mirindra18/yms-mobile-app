@@ -39,9 +39,9 @@ class _LoginScreenState extends State<LoginScreen> {
         MaterialPageRoute(builder: (_) => const ProfileScreen()),
       );
     } else if (auth.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(auth.errorMessage!)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(auth.errorMessage!)));
     }
   }
 
@@ -61,7 +61,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(Icons.school_rounded, size: 64, color: Color(0xFF2E5AAC)),
+                  const Icon(
+                    Icons.school_rounded,
+                    size: 64,
+                    color: Color(0xFF2E5AAC),
+                  ),
                   const SizedBox(height: 16),
                   const Text(
                     'Youth Malagasy Service',
@@ -98,15 +102,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       prefixIcon: const Icon(Icons.lock_outline),
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
-                        icon: Icon(_obscurePassword
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined),
-                        onPressed: () =>
-                            setState(() => _obscurePassword = !_obscurePassword),
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                        ),
+                        onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
                       ),
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) return 'Mot de passe requis';
+                      if (value == null || value.isEmpty)
+                        return 'Mot de passe requis';
                       return null;
                     },
                   ),
@@ -130,7 +138,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text('Se connecter', style: TextStyle(fontSize: 16)),
+                        : const Text(
+                            'Se connecter',
+                            style: TextStyle(fontSize: 16),
+                          ),
                   ),
                 ],
               ),

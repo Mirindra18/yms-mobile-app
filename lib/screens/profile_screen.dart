@@ -44,7 +44,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       nom: _nomController.text.trim(),
       prenom: _prenomController.text.trim(),
       email: _emailController.text.trim(),
-      password: _passwordController.text.isEmpty ? null : _passwordController.text,
+      password: _passwordController.text.isEmpty
+          ? null
+          : _passwordController.text,
     );
 
     if (!mounted) return;
@@ -56,9 +58,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const SnackBar(content: Text('Profil mis à jour avec succès.')),
       );
     } else if (auth.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(auth.errorMessage!)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(auth.errorMessage!)));
     }
   }
 
@@ -91,10 +93,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             icon: Icon(_isEditing ? Icons.close : Icons.edit),
             onPressed: () => setState(() => _isEditing = !_isEditing),
           ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _logout,
-          ),
+          IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
         ],
       ),
       body: SafeArea(
@@ -124,7 +123,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   'Email',
                   _emailController,
                   enabled: _isEditing,
-                  validator: (v) => (v == null || !v.contains('@')) ? 'Email invalide' : null,
+                  validator: (v) =>
+                      (v == null || !v.contains('@')) ? 'Email invalide' : null,
                 ),
                 if (_isEditing) ...[
                   const SizedBox(height: 12),
@@ -132,7 +132,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     controller: _passwordController,
                     obscureText: true,
                     decoration: const InputDecoration(
-                      labelText: 'Nouveau mot de passe (laisser vide si inchangé)',
+                      labelText:
+                          'Nouveau mot de passe (laisser vide si inchangé)',
                       border: OutlineInputBorder(),
                     ),
                     validator: (v) {
@@ -148,16 +149,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 20),
                 const Divider(),
                 const SizedBox(height: 8),
-                const Text('Rôles actifs', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  'Rôles actifs',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: user.roles
-                      .map((role) => Chip(
-                            label: Text(role.replaceFirst('ROLE_', '')),
-                            backgroundColor: const Color(0xFFE3EAF7),
-                          ))
+                      .map(
+                        (role) => Chip(
+                          label: Text(role.replaceFirst('ROLE_', '')),
+                          backgroundColor: const Color(0xFFE3EAF7),
+                        ),
+                      )
                       .toList(),
                 ),
                 if (_isEditing) ...[
@@ -207,7 +213,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         filled: !enabled,
         fillColor: !enabled ? Colors.grey.shade100 : null,
       ),
-      validator: validator ?? (v) => (v == null || v.isEmpty) ? '$label requis' : null,
+      validator:
+          validator ?? (v) => (v == null || v.isEmpty) ? '$label requis' : null,
     );
   }
 }
