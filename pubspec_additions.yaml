@@ -1,0 +1,11 @@
+# Dépendances à ajouter dans le pubspec.yaml existant du projet
+# yms-mobile-app, en plus de celles déjà présentes (dio,
+# flutter_secure_storage, provider).
+#
+# dependencies:
+  intl: ^0.19.0
+  url_launcher: ^6.3.0
+  mobile_scanner: ^5.2.3
+  stomp_dart_client: ^2.0.0
+
+# Puis : flutter pub get

@@ -11,8 +11,8 @@ class AuthProvider extends ChangeNotifier {
   final UserService _userService;
 
   AuthProvider(ApiClient apiClient)
-      : _authService = AuthService(apiClient),
-        _userService = UserService(apiClient);
+    : _authService = AuthService(apiClient),
+      _userService = UserService(apiClient);
 
   AuthStatus status = AuthStatus.unknown;
   UserModel? currentUser;
