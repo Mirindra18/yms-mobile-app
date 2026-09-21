@@ -19,12 +19,14 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'] as int,
+      id: ((json['id'] ?? json['userId']) as num).toInt(),
       email: json['email'] as String,
-      nom: json['nom'] as String,
-      prenom: json['prenom'] as String,
-      isArchived: json['isArchived'] as bool? ?? false,
-      lastLoginDate: json['lastLoginDate'] as String?,
+      nom: (json['lastName'] ?? json['nom'] ?? '') as String,
+      prenom: (json['firstName'] ?? json['prenom'] ?? '') as String,
+      // Jackson serialize un champ Java `isArchived` sous le nom `archived`.
+      // On accepte aussi l'ancien contrat mobile afin de rester compatible.
+      isArchived: (json['archived'] ?? json['isArchived']) as bool? ?? false,
+      lastLoginDate: json['lastLoginDate']?.toString(),
       roles: (json['roles'] as List<dynamic>? ?? [])
           .map((e) => e.toString())
           .toList(),

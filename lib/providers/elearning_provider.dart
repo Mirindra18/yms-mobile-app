@@ -15,7 +15,16 @@ class ElearningProvider extends ChangeNotifier {
   LoadStatus status = LoadStatus.idle;
   String? errorMessage;
 
-  FormationContentModel? parcours;
+  // Listes et caches globaux
+  List<ElearningFormation> formations = [];
+  final Map<int, ElearningContent> _parcours = {};
+  final Map<int, ProgressionModel> _progressions = {};
+
+  bool isLoading = false;
+  bool isLoadingParcours = false;
+
+  // État de lecture courante (pour l'écran de cours / lecteur)
+  ElearningContent? parcours;
   ProgressionModel? progression;
   int indexLeconCourante = 0;
 
@@ -26,19 +35,53 @@ class ElearningProvider extends ChangeNotifier {
 
   bool get estPremiereLecon => indexLeconCourante == 0;
 
-  bool get estDerniereLecon => lecons.isEmpty || indexLeconCourante == lecons.length - 1;
+  bool get estDerniereLecon =>
+      lecons.isEmpty || indexLeconCourante == lecons.length - 1;
+
+  ProgressionModel? progressionDe(int formationId) => _progressions[formationId];
+  Map<int, ProgressionModel> get progressions => _progressions;
+  ElearningContent? parcoursDe(int formationId) => _parcours[formationId];
+
+  /// Charge la liste globale des formations
+  Future<void> loadFormations() async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
+      formations = await _service.getFormations();
+    } on ElearningServiceException catch (e) {
+      errorMessage = e.message;
+    } catch (_) {
+      errorMessage = 'Impossible de charger les formations en ligne.';
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
 
   /// Charge le parcours complet d'une formation ainsi que la
   /// progression existante, puis positionne la lecture sur la dernière
-  /// leçon consultée (reprise de cours, ticket MOB-B1).
+  /// leçon consultée (reprise de cours).
   Future<void> chargerFormation(int formationId) async {
     status = LoadStatus.loading;
     errorMessage = null;
     notifyListeners();
 
     try {
-      parcours = await _service.obtenirParcours(formationId);
-      progression = await _service.obtenirMaProgression(formationId);
+      final content = await _service.obtenirParcours(formationId);
+      parcours = content;
+      _parcours[formationId] = content;
+
+      try {
+        progression = await _service.obtenirMaProgression(formationId);
+        if (progression != null) {
+          _progressions[formationId] = progression!;
+        }
+      } catch (_) {
+        // La progression peut échouer sans bloquer l'affichage du parcours
+      }
+
       indexLeconCourante = _calculerIndexReprise();
 
       if (leconCourante != null) {
@@ -49,9 +92,50 @@ class ElearningProvider extends ChangeNotifier {
     } on ElearningServiceException catch (e) {
       errorMessage = e.message;
       status = LoadStatus.error;
+    } catch (_) {
+      errorMessage = 'Erreur lors du chargement de la formation.';
+      status = LoadStatus.error;
     }
 
     notifyListeners();
+  }
+
+  /// Charge uniquement le parcours d'une formation (compatibilité UI)
+  Future<void> loadParcours(int formationId) async {
+    isLoadingParcours = true;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
+      final content = await _service.obtenirParcours(formationId);
+      _parcours[formationId] = content;
+      if (parcours?.id == formationId) {
+        parcours = content;
+      }
+    } on ElearningServiceException catch (e) {
+      errorMessage = e.message;
+    } catch (_) {
+      errorMessage = 'Impossible de charger le contenu de la formation.';
+    } finally {
+      isLoadingParcours = false;
+      notifyListeners();
+    }
+  }
+
+  /// Charge uniquement la progression d'une formation (compatibilité UI)
+  Future<void> loadProgression(int formationId) async {
+    try {
+      final prog = await _service.obtenirMaProgression(formationId);
+      if (prog != null) {
+        _progressions[formationId] = prog;
+        if (progression?.formationId == formationId) {
+          progression = prog;
+        }
+        notifyListeners();
+      }
+    } catch (_) {
+      // Ignorer silencieusement si la progression échoue
+    }
   }
 
   int _calculerIndexReprise() {
@@ -68,7 +152,11 @@ class ElearningProvider extends ChangeNotifier {
     notifyListeners();
     final lecon = leconCourante;
     if (lecon != null) {
-      await _service.demarrerLecon(formationId, lecon.id);
+      try {
+        final prog = await _service.demarrerLecon(formationId, lecon.id);
+        progression = prog;
+        _progressions[formationId] = prog;
+      } catch (_) {}
     }
   }
 
@@ -86,10 +174,37 @@ class ElearningProvider extends ChangeNotifier {
     if (lecon == null) return;
 
     try {
-      progression = await _service.terminerLecon(formationId, lecon.id);
+      final prog = await _service.terminerLecon(formationId, lecon.id);
+      progression = prog;
+      _progressions[formationId] = prog;
+
       if (!estDerniereLecon) {
         await allerALaLeconSuivante(formationId);
       }
+      notifyListeners();
+    } on ElearningServiceException catch (e) {
+      errorMessage = e.message;
+      notifyListeners();
+    }
+  }
+
+  Future<void> demarrerLecon(int formationId, int leconId) async {
+    try {
+      final prog = await _service.demarrerLecon(formationId, leconId);
+      progression = prog;
+      _progressions[formationId] = prog;
+      notifyListeners();
+    } on ElearningServiceException catch (e) {
+      errorMessage = e.message;
+      notifyListeners();
+    }
+  }
+
+  Future<void> terminerLecon(int formationId, int leconId) async {
+    try {
+      final prog = await _service.terminerLecon(formationId, leconId);
+      progression = prog;
+      _progressions[formationId] = prog;
       notifyListeners();
     } on ElearningServiceException catch (e) {
       errorMessage = e.message;

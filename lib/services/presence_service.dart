@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../models/presence_models.dart';
+import '../models/presence_model.dart';
 import 'api_client.dart';
 
 class PresenceServiceException implements Exception {
@@ -9,11 +10,11 @@ class PresenceServiceException implements Exception {
   String toString() => message;
 }
 
-/// Service d'accès à l'API du module Présences. Ticket MOB-B2 :
-/// scanner de QR Code pour valider sa présence.
-///
-/// À CONFIRMER AVEC SAROBIDY : endpoints /api/presences/** en attente
-/// du microservice presence-service (BACK-B3). Voir presence_models.dart.
+// Alias pour la compatibilité avec la branche distante
+typedef PresenceException = PresenceServiceException;
+
+/// Service d'accès à l'API du module Présences : scanner de QR Code 
+/// et historique d'assiduité de l'apprenant connecté.
 class PresenceService {
   final ApiClient _apiClient;
 
@@ -40,10 +41,13 @@ class PresenceService {
     }
   }
 
+  /// Récupère l'historique complet des présences (format PresenceModel)
   Future<List<PresenceModel>> listerMonHistorique() async {
     try {
       final response = await _apiClient.dio.get('/api/presences/moi');
-      return (response.data as List<dynamic>)
+      final data = response.data;
+      if (data is! List) return [];
+      return data
           .map((e) => PresenceModel.fromJson(e as Map<String, dynamic>))
           .toList();
     } on DioException catch (e) {
@@ -51,11 +55,26 @@ class PresenceService {
     }
   }
 
+  /// Récupère l'historique complet des présences (format PresenceEntry - compatibilité distante)
+  Future<List<PresenceEntry>> getMesPresences() async {
+    try {
+      final response = await _apiClient.dio.get('/api/presences/me');
+      final data = response.data;
+      if (data is! List) return [];
+      return data
+          .map((p) => PresenceEntry.fromJson(p as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      throw PresenceServiceException(_extractError(e, 'Impossible de charger vos présences.'));
+    }
+  }
+
   String _extractError(DioException e, String fallback) {
     final data = e.response?.data;
-    if (data is Map && data['message'] is String) {
+    if (data is Map && data['message'] is String && (data['message'] as String).isNotEmpty) {
       return data['message'] as String;
     }
+    if (e.response?.statusCode == 403) return 'Accès refusé.';
     return fallback;
   }
 }

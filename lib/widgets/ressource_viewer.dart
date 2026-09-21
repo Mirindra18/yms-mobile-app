@@ -4,9 +4,7 @@ import '../models/elearning_models.dart';
 
 /// Affiche une ressource pédagogique selon son type (PDF, vidéo,
 /// document, lien). L'ouverture des fichiers PDF/vidéo se fait via une
-/// application externe pour l'instant ; un lecteur intégré (par
-/// exemple syncfusion_flutter_pdfviewer ou video_player) pourra être
-/// branché ici plus tard sans modifier le reste de l'écran.
+/// application externe pour l'instant.
 class RessourceViewer extends StatelessWidget {
   final RessourceModel ressource;
 
@@ -14,12 +12,15 @@ class RessourceViewer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final icone = switch (ressource.type) {
-      ResourceType.pdf => Icons.picture_as_pdf_outlined,
-      ResourceType.video => Icons.play_circle_outline,
-      ResourceType.document => Icons.description_outlined,
-      ResourceType.link => Icons.link,
-      ResourceType.other => Icons.insert_drive_file_outlined,
+    // On analyse le type sous forme de String (en majuscules pour éviter les erreurs de casse)
+    final typeStr = ressource.type.toUpperCase();
+    
+    final icone = switch (typeStr) {
+      'PDF' => Icons.picture_as_pdf_outlined,
+      'VIDEO' => Icons.play_circle_outline,
+      'DOCUMENT' => Icons.description_outlined,
+      'LINK' => Icons.link,
+      _ => Icons.insert_drive_file_outlined, // Valeur par défaut (OTHER ou autre)
     };
 
     return Card(
@@ -36,7 +37,7 @@ class RessourceViewer extends StatelessWidget {
 
   Future<void> _ouvrir(BuildContext context) async {
     final url = ressource.url;
-    if (url == null || url.isEmpty) {
+    if (url.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Aucun lien disponible pour cette ressource.')),
       );

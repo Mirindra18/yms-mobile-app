@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/elearning_models.dart';
+import '../models/formation_model.dart'; // Ajouté pour s'assurer que FormationModel est bien reconnu
 import '../services/elearning_service.dart';
 import 'lecteur_elearning_screen.dart';
 
@@ -68,7 +69,7 @@ class _FormationsListScreenState extends State<FormationsListScreen> {
                   child: ListTile(
                     leading: const Icon(Icons.menu_book_outlined, color: Color(0xFF2E5AAC)),
                     title: Text(formation.titre),
-                    subtitle: formation.description != null ? Text(formation.description!) : null,
+                    subtitle: formation.description.isNotEmpty ? Text(formation.description) : null,
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(
