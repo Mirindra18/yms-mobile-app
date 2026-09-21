@@ -29,18 +29,11 @@ lib/
   main_example_wiring.dart   <- exemple à fusionner dans main.dart existant
 ```
 
-## 3. Points à adapter avant de commiter
-- `ApiClient.baseUrl` : remplacer par l'URL réelle de l'API Gateway
-  (Sarobidy) ou du backend, selon la topologie retenue par l'équipe.
-- `AuthService.login` : le endpoint `/api/auth/login` et le format de
-  réponse (`{ "token": "..." }`) doivent être confirmés avec Fiderana
-  qui gère le JWT côté backend.
-- `UserService.getProfile` : suppose un `GET /api/users/me`. Si ce
-  endpoint n'existe pas côté backend (le sprint ne liste que POST/PUT),
-  soit l'ajouter côté backend, soit décoder le JWT côté mobile pour
-  récupérer les infos de base.
-- Ne pas fusionner `main_example_wiring.dart` tel quel s'il existe déjà
-  un `main.dart` avec d'autres providers/routes — fusionner manuellement.
+## 3. Câblage actuel
+Le `main.dart` instancie `ApiClient`, `AuthProvider` et un `AuthGate`.
+`GET /api/users/me` est exposé côté backend. L'URL se règle au lancement :
+
+`flutter run --dart-define=API_BASE_URL=http://localhost:8081`
 
 ## 4. Correspondance avec les règles de gestion
 - RG5 (modif profil) → `profile_screen.dart` + `user_service.dart` (`updateProfile`)

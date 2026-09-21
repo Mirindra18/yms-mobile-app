@@ -12,14 +12,12 @@ dependencies:
     sdk: flutter
 
   # Paquets HTTP & État
-  http: ^1.2.0
   dio: ^5.11.0
   provider: ^6.1.5+1
   flutter_secure_storage: ^11.0.0
 
-  # PDF & Fichiers (Sprint 3 - MOB-A3)
-  path_provider: ^2.1.2
-  flutter_pdfview: ^1.3.2
+  # Typographie premium (polices Google, avec fallback hors-ligne)
+  google_fonts: ^6.2.1
 
   # Icônes
   cupertino_icons: ^1.0.8
@@ -31,7 +29,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
-  # Décommente cette section après avoir ajouté l'image du logo dans assets/images/
-  # assets:
-  #   - assets/images/logo.png
