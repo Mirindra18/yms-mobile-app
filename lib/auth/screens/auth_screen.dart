@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/auth_provider.dart';
-import '../theme/app_theme.dart';
+import '../../providers/auth_provider.dart';
+import '../../core/theme/app_theme.dart';
 
 /// Connexion / inscription au style premium (logique métier inchangée).
 class AuthScreen extends StatefulWidget {

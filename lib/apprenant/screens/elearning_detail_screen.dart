@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import '../models/elearning_models.dart';
-import '../providers/elearning_provider.dart';
-import '../theme/app_theme.dart';
-import '../widgets/common.dart';
+import '../../models/elearning_models.dart';
+import '../../providers/elearning_provider.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/widgets/common.dart';
 import 'lecon_screen.dart';
 
 /// Contenu détaillé d'un parcours : chapitres, leçons et progression.

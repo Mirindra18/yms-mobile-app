@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../models/elearning_models.dart';
-import '../models/formation_model.dart'; // Ajouté pour s'assurer que FormationModel est bien reconnu
-import '../services/elearning_service.dart';
+
+import '../../models/formation_model.dart'; // Ajouté pour s'assurer que FormationModel est bien reconnu
+import '../../services/elearning_service.dart';
 import 'lecteur_elearning_screen.dart';
 
 /// Liste des formations disponibles, point d'entrée vers le lecteur

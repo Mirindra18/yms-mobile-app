@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../models/consultation_models.dart';
-import '../providers/consultation_provider.dart';
+import '../../models/consultation_models.dart';
+import '../../providers/consultation_provider.dart';
 import 'creneaux_list_screen.dart';
 
 /// Historique des consultations de l'apprenant connecté, avec

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../models/elearning_models.dart';
+import '../../models/elearning_models.dart';
 
 /// Affiche une ressource pédagogique selon son type (PDF, vidéo,
 /// document, lien). L'ouverture des fichiers PDF/vidéo se fait via une

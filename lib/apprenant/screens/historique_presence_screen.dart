@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../models/presence_models.dart';
-import '../providers/presence_provider.dart';
+import '../../models/presence_models.dart';
+import '../../providers/presence_provider.dart';
 import 'qr_scanner_screen.dart';
 
 /// Historique de présence de l'apprenant connecté. Ticket MOB-B2.

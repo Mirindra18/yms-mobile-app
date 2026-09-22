@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import '../models/finance_models.dart';
-import '../providers/finance_provider.dart';
-import '../providers/formation_provider.dart';
-import '../theme/app_theme.dart';
-import '../widgets/common.dart';
+import '../../models/finance_models.dart';
+import '../../providers/finance_provider.dart';
+import '../../providers/formation_provider.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/widgets/common.dart';
 
 const _modes = [
   ('MVOLA', 'MVola'),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../models/consultation_models.dart';
-import '../providers/consultation_provider.dart';
+import '../../models/consultation_models.dart';
+import '../../providers/consultation_provider.dart';
 
 /// Écran de consultation des créneaux disponibles et de demande de
 /// rendez-vous. Ticket MOB-B1. Utilisé également en mode sélection

@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import '../models/presence_model.dart';
-import '../models/user_model.dart';
-import '../providers/auth_provider.dart';
-import '../providers/finance_provider.dart';
-import '../providers/formation_provider.dart';
-import '../providers/presence_provider.dart';
-import '../theme/app_theme.dart';
-import '../widgets/brand_chrome.dart';
-import '../widgets/common.dart';
+import '../../models/presence_model.dart';
+import '../../models/user_model.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/finance_provider.dart';
+import '../../providers/formation_provider.dart';
+import '../../providers/presence_provider.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/widgets/brand_chrome.dart';
+import '../../core/widgets/common.dart';
 
 /// Onglet Profil : identité, statistiques et menu.
 class ProfileScreen extends StatelessWidget {

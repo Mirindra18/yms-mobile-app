@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../models/formation_model.dart';
-import '../providers/formation_provider.dart';
-import '../theme/app_theme.dart';
-import '../widgets/common.dart';
+import '../../models/formation_model.dart';
+import '../../providers/formation_provider.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/widgets/common.dart';
 import 'formation_detail_screen.dart';
 
 /// Onglet Formations : catalogue du YMS avec recherche locale.

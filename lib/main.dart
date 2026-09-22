@@ -6,11 +6,11 @@ import 'providers/elearning_provider.dart';
 import 'providers/finance_provider.dart';
 import 'providers/formation_provider.dart';
 import 'providers/presence_provider.dart';
-import 'screens/auth_screen.dart';
-import 'screens/root_shell.dart';
+import 'auth/screens/auth_screen.dart';
+import 'routing/role_router.dart';
 import 'services/api_client.dart';
-import 'services/elearning_service.dart'; // Import nécessaire pour instancier le service
-import 'theme/app_theme.dart';
+import 'services/elearning_service.dart';
+import '../../core/theme/app_theme.dart';
 
 void main() {
   final apiClient = ApiClient();
@@ -19,12 +19,23 @@ void main() {
     MultiProvider(
       providers: [
         Provider<ApiClient>.value(value: apiClient),
-        ChangeNotifierProvider(create: (_) => AuthProvider(apiClient)),
-        ChangeNotifierProvider(create: (_) => FormationProvider(apiClient)),
-        ChangeNotifierProvider(create: (_) => FinanceProvider(apiClient)),
-        ChangeNotifierProvider(create: (_) => PresenceProvider(apiClient)),
-        // Correction ici : ElearningProvider attend un ElearningService, pas un ApiClient brut
-        ChangeNotifierProvider(create: (_) => ElearningProvider(ElearningService(apiClient))),
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider(apiClient),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => FormationProvider(apiClient),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => FinanceProvider(apiClient),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => PresenceProvider(apiClient),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ElearningProvider(
+            ElearningService(apiClient),
+          ),
+        ),
       ],
       child: const YmsApp(),
     ),
@@ -56,6 +67,7 @@ class _AuthGateState extends State<AuthGate> {
   @override
   void initState() {
     super.initState();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AuthProvider>().checkAuthStatus();
     });
@@ -69,10 +81,15 @@ class _AuthGateState extends State<AuthGate> {
       case AuthStatus.unknown:
         return const Scaffold(
           backgroundColor: AppColors.cream,
-          body: Center(child: CircularProgressIndicator()),
+          body: Center(
+            child: CircularProgressIndicator(),
+          ),
         );
+
       case AuthStatus.authenticated:
-        return const RootShell();
+        final user = auth.currentUser!;
+        return RoleRouter.getHome(user);
+
       case AuthStatus.unauthenticated:
         return const AuthScreen();
     }

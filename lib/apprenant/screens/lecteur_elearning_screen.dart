@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/elearning_provider.dart';
-import '../widgets/ressource_viewer.dart';
+import '../../providers/elearning_provider.dart';
+import '../../core/widgets/ressource_viewer.dart';
 
 /// Écran de lecture d'une formation en E-learning, avec reprise
 /// automatique à la dernière leçon consultée. Ticket MOB-B1.
@@ -105,9 +105,15 @@ class _ContenuLecteur extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text('${lecon.dureeMinutes} min', style: const TextStyle(color: Colors.black54)),
                 ],
-                if (lecon.contenu != null && lecon.contenu!.isNotEmpty) ...[
+                if (lecon.contenu.isNotEmpty) ...[
                   const SizedBox(height: 16),
-                  Text(lecon.contenu!, style: const TextStyle(fontSize: 15, height: 1.5)),
+                  Text(
+                    lecon.contenu,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      height: 1.5,
+                    ),
+                  ),
                 ],
                 if (lecon.ressources.isNotEmpty) ...[
                   const SizedBox(height: 20),

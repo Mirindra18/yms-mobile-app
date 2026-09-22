@@ -7,13 +7,14 @@ import '../providers/elearning_provider.dart';
 import '../providers/finance_provider.dart';
 import '../providers/formation_provider.dart';
 import '../providers/presence_provider.dart';
-import '../theme/app_theme.dart';
-import '../widgets/brand_chrome.dart';
-import 'certification_screen.dart';
-import 'finance_screen.dart';
-import 'formations_screen.dart';
-import 'home_screen.dart';
-import 'profile_screen.dart';
+import '../../core/theme/app_theme.dart';
+import '../core/widgets/brand_chrome.dart';
+
+import '../apprenant/screens/certification_screen.dart';
+import '../apprenant/screens/finance_screen.dart';
+import '../apprenant/screens/formations_screen.dart';
+import '../apprenant/screens/home_screen.dart';
+import '../apprenant/screens/profile_screen.dart';
 
 /// Coquille principale de l'application : 5 onglets + chrome premium
 /// (barre de marque, notifications, assistant, navigation).
@@ -30,8 +31,10 @@ class _RootShellState extends State<RootShell> {
   @override
   void initState() {
     super.initState();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final ctx = context;
+
       ctx.read<FormationProvider>().loadFormations();
       ctx.read<FinanceProvider>().load();
       ctx.read<PresenceProvider>().load();
@@ -41,9 +44,12 @@ class _RootShellState extends State<RootShell> {
 
   String get _initials {
     final user = context.read<AuthProvider>().currentUser;
+
     if (user == null) return '?';
+
     final p = user.prenom.isNotEmpty ? user.prenom[0] : '';
     final n = user.nom.isNotEmpty ? user.nom[0] : '';
+
     return '$p$n'.toUpperCase();
   }
 
@@ -76,7 +82,10 @@ class _RootShellState extends State<RootShell> {
         ),
       ),
       floatingActionButton: const ChatFab(),
-      bottomNavigationBar: _PremiumNav(current: _index, onTap: _goTo),
+      bottomNavigationBar: _PremiumNav(
+        current: _index,
+        onTap: _goTo,
+      ),
     );
   }
 }
@@ -85,13 +94,20 @@ class _PremiumNav extends StatelessWidget {
   final int current;
   final ValueChanged<int> onTap;
 
-  const _PremiumNav({required this.current, required this.onTap});
+  const _PremiumNav({
+    required this.current,
+    required this.onTap,
+  });
 
   static const _items = [
     (Icons.home_outlined, Icons.home_rounded, 'Accueil'),
     (Icons.school_outlined, Icons.school_rounded, 'Formations'),
     (Icons.payments_outlined, Icons.payments_rounded, 'Écolage'),
-    (Icons.workspace_premium_outlined, Icons.workspace_premium_rounded, 'Certificat'),
+    (
+      Icons.workspace_premium_outlined,
+      Icons.workspace_premium_rounded,
+      'Certificat',
+    ),
     (Icons.person_outline, Icons.person_rounded, 'Profil'),
   ];
 
@@ -100,7 +116,11 @@ class _PremiumNav extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.white,
-        border: Border(top: BorderSide(color: AppColors.cardBorder)),
+        border: Border(
+          top: BorderSide(
+            color: AppColors.cardBorder,
+          ),
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -110,6 +130,7 @@ class _PremiumNav extends StatelessWidget {
             children: List.generate(_items.length, (i) {
               final (icon, activeIcon, label) = _items[i];
               final selected = current == i;
+
               return Expanded(
                 child: InkWell(
                   onTap: () => onTap(i),
@@ -126,13 +147,17 @@ class _PremiumNav extends StatelessWidget {
                             vertical: 5,
                           ),
                           decoration: BoxDecoration(
-                            color: selected ? AppColors.brown900 : Colors.transparent,
+                            color: selected
+                                ? AppColors.brown900
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Icon(
                             selected ? activeIcon : icon,
                             size: 22,
-                            color: selected ? AppColors.gold : AppColors.muted,
+                            color: selected
+                                ? AppColors.gold
+                                : AppColors.muted,
                           ),
                         ),
                         const SizedBox(height: 3),
@@ -140,8 +165,12 @@ class _PremiumNav extends StatelessWidget {
                           label,
                           style: GoogleFonts.manrope(
                             fontSize: 10,
-                            fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                            color: selected ? AppColors.brown900 : AppColors.muted,
+                            fontWeight: selected
+                                ? FontWeight.w800
+                                : FontWeight.w600,
+                            color: selected
+                                ? AppColors.brown900
+                                : AppColors.muted,
                           ),
                         ),
                       ],

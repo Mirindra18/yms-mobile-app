@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../models/notification_models.dart';
-import '../providers/notification_provider.dart';
+import '../../models/notification_models.dart';
+import '../../providers/notification_provider.dart';
 
 /// Centre de notifications en temps réel. Ticket MOB-B2.
 class NotificationsCenterScreen extends StatefulWidget {

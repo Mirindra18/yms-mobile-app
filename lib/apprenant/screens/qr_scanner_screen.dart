@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
-import '../providers/presence_provider.dart';
+import '../../providers/presence_provider.dart';
 
 /// Écran de scan du QR Code de séance pour valider sa présence.
 /// Ticket MOB-B2. [RG-PRES-04]

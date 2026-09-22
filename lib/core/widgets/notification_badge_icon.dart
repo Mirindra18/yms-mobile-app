@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/notification_provider.dart';
-import '../screens/notifications_center_screen.dart';
+import '../../providers/notification_provider.dart';
+import '../../apprenant/screens/notifications_center_screen.dart';
 
 /// Icône de notifications avec badge du nombre de messages non lus, à
 /// placer dans l'AppBar des écrans principaux de l'application.
