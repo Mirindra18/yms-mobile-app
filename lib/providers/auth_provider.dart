@@ -34,29 +34,32 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> register({
+  /// Inscription. Ne connecte PAS automatiquement (le backend ne renvoie
+  /// pas de token au register) : retourne le message de succès à afficher,
+  /// ou null en cas d'échec (voir errorMessage).
+  Future<String?> register({
     required String nom,
     required String prenom,
     required String email,
     required String password,
+    required String role,
   }) async {
     isLoading = true;
     errorMessage = null;
     notifyListeners();
 
     try {
-      currentUser = await _authService.register(
-        firstName: prenom,
-        lastName: nom,
+      final message = await _authService.register(
+        nom: nom,
+        prenom: prenom,
         email: email,
         password: password,
+        role: role,
       );
-      status = AuthStatus.authenticated;
-      return true;
+      return message;
     } catch (e) {
       errorMessage = e.toString();
-      status = AuthStatus.unauthenticated;
-      return false;
+      return null;
     } finally {
       isLoading = false;
       notifyListeners();

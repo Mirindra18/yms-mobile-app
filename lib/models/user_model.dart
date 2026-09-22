@@ -6,6 +6,7 @@ class UserModel {
   final bool isArchived;
   final String? lastLoginDate;
   final List<String> roles;
+  final String? roleDemandeEnAttente;
 
   UserModel({
     required this.id,
@@ -15,6 +16,7 @@ class UserModel {
     required this.isArchived,
     required this.roles,
     this.lastLoginDate,
+    this.roleDemandeEnAttente,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -23,13 +25,12 @@ class UserModel {
       email: json['email'] as String,
       nom: (json['lastName'] ?? json['nom'] ?? '') as String,
       prenom: (json['firstName'] ?? json['prenom'] ?? '') as String,
-      // Jackson serialize un champ Java `isArchived` sous le nom `archived`.
-      // On accepte aussi l'ancien contrat mobile afin de rester compatible.
       isArchived: (json['archived'] ?? json['isArchived']) as bool? ?? false,
       lastLoginDate: json['lastLoginDate']?.toString(),
       roles: (json['roles'] as List<dynamic>? ?? [])
           .map((e) => e.toString())
           .toList(),
+      roleDemandeEnAttente: json['roleDemandeEnAttente'] as String?,
     );
   }
 
@@ -46,6 +47,7 @@ class UserModel {
       isArchived: isArchived,
       lastLoginDate: lastLoginDate,
       roles: roles,
+      roleDemandeEnAttente: roleDemandeEnAttente,
     );
   }
 }

@@ -7,24 +7,35 @@ import '../apprenant/apprenant_shell.dart';
 
 class RoleRouter {
   static Widget getHome(UserModel user) {
-    if (user.roles.contains('ADMIN')) {
+    debugPrint('===== ROLE DEBUG =====');
+    debugPrint('Nom : ${user.nom}');
+    debugPrint('Prénom : ${user.prenom}');
+    debugPrint('Roles reçus : ${user.roles}');
+    debugPrint('=====================');
+
+    if (user.roles.contains('ROLE_ADMIN')) {
       return const AdminShell();
     }
 
-    if (user.roles.contains('FORMATEUR')) {
+    if (user.roles.contains('ROLE_FORMATEUR')) {
       return const FormateurShell();
     }
 
-    if (user.roles.contains('APPRENANT')) {
+    if (user.roles.contains('ROLE_APPRENANT')) {
       return const ApprenantShell();
     }
 
-    return const Scaffold(
+    return Scaffold(
       body: Center(
-        child: Text(
-          'Aucun rôle reconnu',
-          style: TextStyle(
-            fontSize: 18,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            'Aucun rôle reconnu\n\n'
+            'Rôles reçus : ${user.roles}',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 18,
+            ),
           ),
         ),
       ),
