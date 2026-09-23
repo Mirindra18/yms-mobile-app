@@ -6,7 +6,7 @@ import 'providers/elearning_provider.dart';
 import 'providers/finance_provider.dart';
 import 'providers/formation_provider.dart';
 import 'providers/presence_provider.dart';
-import 'auth/screens/auth_screen.dart';
+import 'auth/screens/login_screen.dart';
 import 'routing/role_router.dart';
 import 'services/api_client.dart';
 import 'services/elearning_service.dart';
@@ -91,7 +91,7 @@ class _AuthGateState extends State<AuthGate> {
         return RoleRouter.getHome(user);
 
       case AuthStatus.unauthenticated:
-        return const AuthScreen();
+        return const LoginScreen();
     }
   }
 }
