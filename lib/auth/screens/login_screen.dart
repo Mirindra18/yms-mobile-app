@@ -324,9 +324,9 @@ class _LoginScreenState extends State<LoginScreen> {
       child: ElevatedButton(
         onPressed: isLoading ? null : _handleLogin,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color.fromARGB(255, 201, 172, 45),
+          backgroundColor: const Color.fromARGB(255, 196, 164, 77),
           disabledBackgroundColor:
-              const Color.fromARGB(255, 226, 198, 39).withValues(alpha: 0.55),
+              const Color.fromARGB(255, 214, 168, 67).withValues(alpha: 0.55),
           foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -387,7 +387,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 _rememberMe = value ?? false;
               });
             },
-            activeColor: const Color.fromARGB(255, 197, 181, 39),
+            activeColor: const Color.fromARGB(255, 206, 172, 61),
             checkColor: Colors.white,
             side: BorderSide(
               color: Colors.grey[600]!,
@@ -498,7 +498,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             style: GoogleFonts.manrope(
                               fontSize: 13,
                               fontWeight: FontWeight.w800,
-                              color: const Color.fromARGB(255, 214, 189, 49),
+                              color: const Color.fromARGB(255, 201, 164, 62),
                               letterSpacing: 1.2,
                             ),
                           ),

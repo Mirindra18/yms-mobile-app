@@ -1,11 +1,11 @@
-/// Modèles du module Présences.
-///
-/// À CONFIRMER AVEC SAROBIDY : le microservice presence-service
-/// (ticket BACK-B3) n'est pas encore disponible dans ce dépôt au
-/// moment de l'écriture de ce module. Le contrat ci-dessous est une
-/// hypothèse de travail cohérente avec les règles de gestion
-/// RG-PRES-01 à RG-PRES-06 définies dans les spécifications du projet.
-/// Ajuster les champs dès que l'API réelle sera publiée.
+// Modèles du module Présences.
+//
+// À CONFIRMER AVEC SAROBIDY : le microservice presence-service
+// (ticket BACK-B3) n'est pas encore disponible dans ce dépôt au
+// moment de l'écriture de ce module. Le contrat ci-dessous est une
+// hypothèse de travail cohérente avec les règles de gestion
+// RG-PRES-01 à RG-PRES-06 définies dans les spécifications du projet.
+// Ajuster les champs dès que l'API réelle sera publiée.
 
 enum StatutPresence { present, absent, retard, excuse }
 

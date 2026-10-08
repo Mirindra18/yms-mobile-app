@@ -119,7 +119,7 @@ context.read<NotificationProvider>().arreterEcouteTempsReel();
 - **`presence_service.dart`** : le microservice `presence-service`
   (ticket BACK-B3, Sarobidy) n'existe pas encore dans le dépôt backend
   au moment de l'écriture de ce module. Les endpoints
-  `POST /api/presences/scan` et `GET /api/presences/moi` sont une
+  `POST /api/presences/scan` et `GET /api/presences/me` sont une
   hypothèse de travail cohérente avec les règles RG-PRES-01 à
   RG-PRES-06. **À confirmer avec Sarobidy** dès que le service sera
   disponible, et ajuster `presence_models.dart` en conséquence.

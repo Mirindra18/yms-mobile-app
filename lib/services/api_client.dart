@@ -12,7 +12,7 @@ class ApiClient {
   /// Exemples :
   /// - Windows / navigateur : http://localhost:8081
   /// - Emulateur Android : http://10.0.2.2:8081
-///   - Telephone physique : `http://<IP-DU-PC>:8081`
+  /// - Telephone physique : `http://<IP-DU-PC>:8081`
   static const String _configuredBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: '',

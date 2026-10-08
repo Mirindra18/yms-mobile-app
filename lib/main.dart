@@ -11,30 +11,22 @@ import 'routing/role_router.dart';
 import 'services/api_client.dart';
 import 'services/elearning_service.dart';
 import '../../core/theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() {
   final apiClient = ApiClient();
+  GoogleFonts.config.allowRuntimeFetching = false;
 
   runApp(
     MultiProvider(
       providers: [
         Provider<ApiClient>.value(value: apiClient),
+        ChangeNotifierProvider(create: (_) => AuthProvider(apiClient)),
+        ChangeNotifierProvider(create: (_) => FormationProvider(apiClient)),
+        ChangeNotifierProvider(create: (_) => FinanceProvider(apiClient)),
+        ChangeNotifierProvider(create: (_) => PresenceProvider(apiClient)),
         ChangeNotifierProvider(
-          create: (_) => AuthProvider(apiClient),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => FormationProvider(apiClient),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => FinanceProvider(apiClient),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => PresenceProvider(apiClient),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => ElearningProvider(
-            ElearningService(apiClient),
-          ),
+          create: (_) => ElearningProvider(ElearningService(apiClient)),
         ),
       ],
       child: const YmsApp(),
@@ -81,9 +73,7 @@ class _AuthGateState extends State<AuthGate> {
       case AuthStatus.unknown:
         return const Scaffold(
           backgroundColor: AppColors.cream,
-          body: Center(
-            child: CircularProgressIndicator(),
-          ),
+          body: Center(child: CircularProgressIndicator()),
         );
 
       case AuthStatus.authenticated:

@@ -4,44 +4,66 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import 'common.dart';
 
-/// Logo « YMS » : marque (badge doré) + nom de famille en serif.
+/// Logo officiel de Youth Malagasy Service.
 class YmsLogo extends StatelessWidget {
   final double size;
-  const YmsLogo({super.key, this.size = 40});
+
+  const YmsLogo({
+    super.key,
+    this.size = 40,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
+        // Logo officiel YMS
+        Image.asset(
+          'assets/images/logo_yms.png',
           width: size,
           height: size,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [AppColors.brown800, AppColors.brown900],
-            ),
-            borderRadius: BorderRadius.circular(size * 0.32),
-            border: Border.all(color: AppColors.gold.withValues(alpha: 0.7)),
-          ),
-          child: const Icon(
-            Icons.workspace_premium,
-            color: AppColors.gold,
-            size: 22,
-          ),
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.brown800,
+                    AppColors.brown900,
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(size * 0.32),
+                border: Border.all(
+                  color: AppColors.gold.withValues(alpha: 0.7),
+                ),
+              ),
+              child: Icon(
+                Icons.image_not_supported_outlined,
+                color: AppColors.gold,
+                size: size * 0.55,
+              ),
+            );
+          },
         ),
+
         const SizedBox(width: 10),
+
+        // Nom et slogan
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'YMS',
+              'Youth Malagasy Service',
               style: GoogleFonts.cormorantGaramond(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: AppColors.brown900,
+                color: const Color.fromARGB(255, 207, 194, 78),
                 height: 1,
               ),
             ),
@@ -51,7 +73,7 @@ class YmsLogo extends StatelessWidget {
                 fontSize: 9,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.4,
-                color: AppColors.muted,
+                color: const Color.fromARGB(220, 194, 164, 66),
               ),
             ),
           ],

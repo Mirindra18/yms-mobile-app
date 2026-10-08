@@ -11,8 +11,7 @@ class InscriptionException implements Exception {
   String toString() => message;
 }
 
-/// Inscription d'un apprenant à une formation (POST /inscrire)
-/// et vérification du statut (GET /mon-inscription).
+/// Inscription d'un apprenant à une formation et vérification du statut.
 /// 100 % basé sur ApiClient Dio — fonctionne sur mobile ET web.
 class InscriptionService {
   final ApiClient _apiClient;
@@ -20,7 +19,7 @@ class InscriptionService {
 
   Future<void> inscrireAFormation(int formationId) async {
     try {
-      await _apiClient.dio.post('/api/formations/$formationId/inscrire');
+      await _apiClient.dio.post('/api/inscriptions/formations/$formationId');
     } on DioException catch (e) {
       if (e.response?.statusCode == 409) {
         throw InscriptionException(
@@ -37,12 +36,16 @@ class InscriptionService {
     }
   }
 
+  /// Le backend n'a pas d'endpoint dédié à la vérification d'une seule
+  /// formation : on récupère toutes les inscriptions de l'utilisateur
+  /// connecté (GET /api/inscriptions/me) et on cherche localement.
   Future<bool> estInscritAFormation(int formationId) async {
     try {
-      final response = await _apiClient.dio.get(
-        '/api/formations/$formationId/mon-inscription',
-      );
-      return response.data is Map && response.data['inscrit'] == true;
+      final response = await _apiClient.dio.get('/api/inscriptions/me');
+      final data = response.data;
+      if (data is! List) return false;
+
+      return data.any((item) => item is Map && item['formationId'] == formationId);
     } on DioException catch (_) {
       return false;
     }

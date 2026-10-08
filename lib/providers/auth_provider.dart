@@ -11,8 +11,8 @@ class AuthProvider extends ChangeNotifier {
   final UserService _userService;
 
   AuthProvider(ApiClient apiClient)
-    : _authService = AuthService(apiClient),
-      _userService = UserService(apiClient);
+      : _authService = AuthService(apiClient),
+        _userService = UserService(apiClient);
 
   AuthStatus status = AuthStatus.unknown;
   UserModel? currentUser;
@@ -43,6 +43,10 @@ class AuthProvider extends ChangeNotifier {
     required String email,
     required String password,
     required String role,
+    required String adresse,
+    required String genre,
+    required String telephone,
+    required String formationSouhaitee,
   }) async {
     isLoading = true;
     errorMessage = null;
@@ -55,6 +59,10 @@ class AuthProvider extends ChangeNotifier {
         email: email,
         password: password,
         role: role,
+        adresse: adresse,
+        genre: genre,
+        telephone: telephone,
+        formationSouhaitee: formationSouhaitee,
       );
       return message;
     } catch (e) {

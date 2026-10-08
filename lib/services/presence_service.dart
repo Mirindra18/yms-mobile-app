@@ -1,80 +1,238 @@
 import 'package:dio/dio.dart';
-import '../models/presence_models.dart';
+
 import '../models/presence_model.dart';
+import '../models/presence_models.dart';
 import 'api_client.dart';
 
 class PresenceServiceException implements Exception {
   final String message;
+
   PresenceServiceException(this.message);
+
   @override
   String toString() => message;
 }
 
-// Alias pour la compatibilité avec la branche distante
+// Compatibilité avec l'ancien code
 typedef PresenceException = PresenceServiceException;
 
-/// Service d'accès à l'API du module Présences : scanner de QR Code 
-/// et historique d'assiduité de l'apprenant connecté.
+/// Service de gestion des présences.
+///
+/// Les routes correspondent exactement au backend actuel.
+///
+/// Backend :
+/// GET  /api/presences/me
+/// GET  /api/presences/me/status-today
+/// POST /api/presences/qr/valider?token=...
 class PresenceService {
   final ApiClient _apiClient;
 
   PresenceService(this._apiClient);
 
-  /// Envoie le contenu brut du QR Code scanné afin d'enregistrer la
-  /// présence de l'apprenant connecté à la séance correspondante.
-  /// [RG-PRES-04] la présence peut être enregistrée par scan de QR Code.
-  Future<PresenceModel> validerPresenceParQrCode(String contenuQrCode) async {
+  // ============================================================
+  // QR CODE
+  // ============================================================
+
+  /// Valide une présence à partir du contenu du QR Code.
+  ///
+  /// Backend :
+  /// POST /api/presences/qr/valider?token=...
+  Future<PresenceModel> validerPresenceParQrCode(
+    String contenuQrCode,
+  ) async {
+    if (contenuQrCode.trim().isEmpty) {
+      throw PresenceServiceException(
+        'Le QR Code est vide.',
+      );
+    }
+
     try {
       final response = await _apiClient.dio.post(
-        '/api/presences/scan',
-        data: {'qrCode': contenuQrCode},
+        '/api/presences/qr/valider',
+        queryParameters: {
+          'token': contenuQrCode.trim(),
+        },
       );
-      return PresenceModel.fromJson(response.data as Map<String, dynamic>);
+
+      final data = response.data;
+
+      if (data is! Map<String, dynamic>) {
+        throw PresenceServiceException(
+          'Réponse invalide du serveur.',
+        );
+      }
+
+      return PresenceModel.fromJson(data);
     } on DioException catch (e) {
-      if (e.response?.statusCode == 409) {
-        throw PresenceServiceException('Votre présence a déjà été enregistrée pour cette séance.');
-      }
-      if (e.response?.statusCode == 400) {
-        throw PresenceServiceException('QR Code invalide ou expiré.');
-      }
-      throw PresenceServiceException(_extractError(e, 'Impossible d\'enregistrer la présence.'));
+      throw PresenceServiceException(
+        _extractError(
+          e,
+          'Impossible d\'enregistrer la présence.',
+        ),
+      );
     }
   }
 
-  /// Récupère l'historique complet des présences (format PresenceModel)
+  // ============================================================
+  // HISTORIQUE DE L'APPRENANT
+  // ============================================================
+
+  /// Récupère l'historique des présences
+  /// de l'apprenant actuellement connecté.
+  ///
+  /// Backend :
+  /// GET /api/presences/me
   Future<List<PresenceModel>> listerMonHistorique() async {
     try {
-      final response = await _apiClient.dio.get('/api/presences/moi');
+      final response = await _apiClient.dio.get(
+        '/api/presences/me',
+      );
+
       final data = response.data;
-      if (data is! List) return [];
+
+      if (data is! List) {
+        return [];
+      }
+
       return data
-          .map((e) => PresenceModel.fromJson(e as Map<String, dynamic>))
+          .whereType<Map<String, dynamic>>()
+          .map(
+            (item) => PresenceModel.fromJson(item),
+          )
           .toList();
     } on DioException catch (e) {
-      throw PresenceServiceException(_extractError(e, 'Impossible de charger votre historique de présence.'));
+      throw PresenceServiceException(
+        _extractError(
+          e,
+          'Impossible de charger votre historique de présence.',
+        ),
+      );
     }
   }
 
-  /// Récupère l'historique complet des présences (format PresenceEntry - compatibilité distante)
+  /// Ancienne méthode conservée pour éviter
+  /// de casser les écrans existants.
+  ///
+  /// Backend :
+  /// GET /api/presences/me
   Future<List<PresenceEntry>> getMesPresences() async {
     try {
-      final response = await _apiClient.dio.get('/api/presences/me');
+      final response = await _apiClient.dio.get(
+        '/api/presences/me',
+      );
+
       final data = response.data;
-      if (data is! List) return [];
+
+      if (data is! List) {
+        return [];
+      }
+
       return data
-          .map((p) => PresenceEntry.fromJson(p as Map<String, dynamic>))
+          .whereType<Map<String, dynamic>>()
+          .map(
+            (item) => PresenceEntry.fromJson(item),
+          )
           .toList();
     } on DioException catch (e) {
-      throw PresenceServiceException(_extractError(e, 'Impossible de charger vos présences.'));
+      throw PresenceServiceException(
+        _extractError(
+          e,
+          'Impossible de charger vos présences.',
+        ),
+      );
     }
   }
 
-  String _extractError(DioException e, String fallback) {
-    final data = e.response?.data;
-    if (data is Map && data['message'] is String && (data['message'] as String).isNotEmpty) {
-      return data['message'] as String;
+  // ============================================================
+  // STATUT DES SÉANCES DU JOUR
+  // ============================================================
+
+  /// Récupère le statut des séances du jour
+  /// pour l'apprenant connecté.
+  ///
+  /// Backend :
+  /// GET /api/presences/me/status-today
+  ///
+  /// Cette méthode est volontairement séparée de
+  /// l'historique afin de ne pas mélanger les deux données.
+  Future<List<dynamic>> getTodayStatus() async {
+    try {
+      final response = await _apiClient.dio.get(
+        '/api/presences/me/status-today',
+      );
+
+      final data = response.data;
+
+      if (data is! List) {
+        return [];
+      }
+
+      return data;
+    } on DioException catch (e) {
+      throw PresenceServiceException(
+        _extractError(
+          e,
+          'Impossible de charger le statut des séances.',
+        ),
+      );
     }
-    if (e.response?.statusCode == 403) return 'Accès refusé.';
-    return fallback;
+  }
+
+  // ============================================================
+  // GESTION DES ERREURS
+  // ============================================================
+
+  String _extractError(
+    DioException error,
+    String fallback,
+  ) {
+    final statusCode = error.response?.statusCode;
+    final data = error.response?.data;
+
+    // ----------------------------------------------------------
+    // Message envoyé directement par le backend
+    // ----------------------------------------------------------
+
+    if (data is Map) {
+      final message = data['message'];
+
+      if (message is String && message.trim().isNotEmpty) {
+        return message;
+      }
+
+      final errorMessage = data['error'];
+
+      if (errorMessage is String &&
+          errorMessage.trim().isNotEmpty) {
+        return errorMessage;
+      }
+    }
+
+    // ----------------------------------------------------------
+    // Erreurs HTTP
+    // ----------------------------------------------------------
+
+    switch (statusCode) {
+      case 400:
+        return 'La requête est invalide.';
+
+      case 401:
+        return 'Votre session a expiré. Veuillez vous reconnecter.';
+
+      case 403:
+        return 'Vous n\'avez pas l\'autorisation d\'effectuer cette action.';
+
+      case 404:
+        return 'La ressource demandée est introuvable.';
+
+      case 409:
+        return 'Votre présence a déjà été enregistrée pour cette séance.';
+
+      case 500:
+        return 'Une erreur interne du serveur est survenue.';
+
+      default:
+        return fallback;
+    }
   }
 }

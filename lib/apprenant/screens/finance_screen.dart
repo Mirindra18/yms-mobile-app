@@ -1,503 +1,890 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/finance_models.dart';
 import '../../providers/finance_provider.dart';
 import '../../providers/formation_provider.dart';
-import '../../core/theme/app_theme.dart';
-import '../../core/widgets/common.dart';
 
-const _modes = [
-  ('MVOLA', 'MVola'),
-  ('ORANGE_MONEY', 'Orange Money'),
-  ('AIRTEL_MONEY', 'Airtel Money'),
-  ('ESPECES', 'Espèces'),
-  ('VIREMENT_BANCAIRE', 'Virement bancaire'),
-];
+class FinanceScreen extends StatefulWidget {
+  const FinanceScreen({super.key});
 
-String _modeLabel(String mode) {
-  for (final (value, label) in _modes) {
-    if (value == mode) return label;
-  }
-  return mode;
+  @override
+  State<FinanceScreen> createState() => _FinanceScreenState();
 }
 
-/// Onglet Écolage : synthèse de la dette, échéances et paiement.
-class FinanceScreen extends StatelessWidget {
-  const FinanceScreen({super.key});
+class _FinanceScreenState extends State<FinanceScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<FinanceProvider>().load();
+      context.read<FormationProvider>().loadFormations();
+    });
+  }
+
+  Future<void> _refresh() async {
+    await Future.wait([
+      context.read<FinanceProvider>().load(),
+      context.read<FormationProvider>().loadFormations(),
+    ]);
+  }
 
   @override
   Widget build(BuildContext context) {
     final finance = context.watch<FinanceProvider>();
-    final formations = context.watch<FormationProvider>();
+    final formationProvider = context.watch<FormationProvider>();
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.page, 4, AppSpacing.page, 28),
-      children: [
-        Text('Écolage', style: Theme.of(context).textTheme.headlineSmall),
-        const SizedBox(height: 2),
-        Text(
-          'Suivez vos paiements en toute simplicité',
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-        const SizedBox(height: 18),
-        if (finance.isLoading && finance.ecolages.isEmpty)
-          const Padding(padding: EdgeInsets.symmetric(vertical: 60), child: AppLoading())
-        else if (finance.errorMessage != null && finance.ecolages.isEmpty)
-          AppErrorState(message: finance.errorMessage!, onRetry: finance.load)
-        else if (finance.ecolages.isEmpty)
-          const AppEmptyState(
-            icon: Icons.account_balance_wallet_outlined,
-            title: 'Aucun écolage',
-            subtitle:
-                'Votre écolage s\'affichera ici une fois inscrit à une formation.',
-          )
-        else
-          ...finance.ecolages.map((ecolage) => _buildEcolage(context, ecolage, formations)),
-      ],
-    );
-  }
-
-  Widget _buildEcolage(BuildContext context, EcolageModel ecolage,
-      FormationProvider formations) {
-    final titre = formations
-        .formationById(ecolage.formationId)
-        ?.titre ?? 'Formation #${ecolage.formationId}';
-    final echeances = ecolage.echeances.toList()
-      ..sort((a, b) {
-        final da = a.moisConcerne ?? DateTime(0);
-        final db = b.moisConcerne ?? DateTime(0);
-        return da.compareTo(db);
-      });
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _SynthCard(ecolage: ecolage, formationTitre: titre),
-        const SizedBox(height: 24),
-        SectionHeader(
-          title: 'Échéances',
-          subtitle: '${echeances.length} mensualités à suivre',
-        ),
-        const SizedBox(height: 12),
-        ...echeances.map(
-          (e) => Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: _EcheanceCard(
-              echeance: e,
-              onPayer: () => _openPaiement(context, e),
-            ),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F4EF),
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: const Color(0xFFF7F4EF),
+        foregroundColor: const Color(0xFF2F2924),
+        title: const Text(
+          'Mon écolage',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
           ),
         ),
-      ],
-    );
-  }
-
-  Future<void> _openPaiement(BuildContext context, EcheanceModel echeance) {
-    return showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.cream,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (_) => _PaiementSheet(echeance: echeance),
-    );
-  }
-}
-
-class _SynthCard extends StatelessWidget {
-  final EcolageModel ecolage;
-  final String formationTitre;
-
-  const _SynthCard({required this.ecolage, required this.formationTitre});
-
-  @override
-  Widget build(BuildContext context) {
-    final paye = ecolage.montantTotal - ecolage.soldeDu;
-    final ratio = ecolage.montantTotal <= 0
-        ? 0.0
-        : (paye / ecolage.montantTotal).clamp(0.0, 1.0);
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.brown800, AppColors.brown950],
+      body: RefreshIndicator(
+        onRefresh: _refresh,
+        child: _buildBody(
+          context,
+          finance,
+          formationProvider,
         ),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.gold.withValues(alpha: 0.55)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    );
+  }
+
+  Widget _buildBody(
+    BuildContext context,
+    FinanceProvider finance,
+    FormationProvider formationProvider,
+  ) {
+    if (finance.isLoading && finance.ecolages.isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (finance.errorMessage != null && finance.ecolages.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24),
         children: [
-          Text(
-            'Écolage · $formationTitre',
-            style: GoogleFonts.manrope(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.4,
-              color: AppColors.goldSoft,
-            ),
+          const SizedBox(height: 100),
+          Icon(
+            Icons.error_outline_rounded,
+            size: 64,
+            color: Colors.red.shade400,
           ),
-          const SizedBox(height: 14),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Solde restant',
-                      style: GoogleFonts.manrope(
-                        fontSize: 12,
-                        color: AppColors.goldSoft,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      AppFormat.ar(ecolage.soldeDu),
-                      style: GoogleFonts.cormorantGaramond(
-                        fontSize: 30,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.cream,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              StatusChip(
-                label: ecolage.estSolder ? 'Soldé' : 'En cours',
-                color: ecolage.estSolder ? AppColors.ok : AppColors.gold,
-                background: Colors.white.withValues(alpha: 0.12),
-                icon: ecolage.estSolder
-                    ? Icons.check_circle
-                    : Icons.hourglass_top,
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: ratio,
-              minHeight: 8,
-              backgroundColor: AppColors.brown700.withValues(alpha: 0.5),
-              valueColor: const AlwaysStoppedAnimation(AppColors.gold),
+          const SizedBox(height: 16),
+          const Text(
+            'Impossible de charger vos informations financières.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            '${AppFormat.ar(paye)} réglés sur ${AppFormat.ar(ecolage.montantTotal)}',
-            style: GoogleFonts.manrope(
-              fontSize: 11,
-              color: AppColors.goldSoft,
+            finance.errorMessage!,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.grey.shade700,
             ),
+          ),
+          const SizedBox(height: 24),
+          FilledButton.icon(
+            onPressed: finance.load,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Réessayer'),
+          ),
+        ],
+      );
+    }
+
+    if (finance.ecolages.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
+        children: [
+          const SizedBox(height: 70),
+          Container(
+            width: 90,
+            height: 90,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEDE5D8),
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: const Icon(
+              Icons.account_balance_wallet_outlined,
+              size: 46,
+              color: Color(0xFF8B6F47),
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Aucun écolage',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF2F2924),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Votre écolage apparaîtra ici lorsque votre dossier financier aura été créé.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 15,
+              height: 1.5,
+              color: Colors.grey.shade700,
+            ),
+          ),
+          const SizedBox(height: 28),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: const Color(0xFFE5DED4),
+              ),
+            ),
+            child: const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  color: Color(0xFF8B6F47),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'L’inscription à une formation et la création de votre écolage sont deux opérations différentes. Si vous êtes déjà inscrit mais que cet écran reste vide, votre écolage doit encore être créé par l’administration.',
+                    style: TextStyle(
+                      height: 1.45,
+                      color: Color(0xFF5F574F),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    final total = finance.ecolages.fold<double>(
+      0,
+      (sum, ecolage) => sum + ecolage.montantTotal,
+    );
+
+    final solde = finance.soldeTotal;
+
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+      children: [
+        _buildSummaryCard(
+          total: total,
+          solde: solde,
+        ),
+        const SizedBox(height: 20),
+
+        if (finance.ecolages.length > 1)
+          _buildSectionTitle(
+            'Mes formations',
+            Icons.school_outlined,
+          ),
+
+        if (finance.ecolages.length > 1)
+          const SizedBox(height: 10),
+
+        ...finance.ecolages.map(
+          (ecolage) => Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: _buildEcolageCard(
+              context,
+              ecolage,
+              formationProvider,
+            ),
+          ),
+        ),
+
+        if (finance.errorMessage != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              finance.errorMessage!,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.red.shade700,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryCard({
+    required double total,
+    required double solde,
+  }) {
+    final paye = total - solde;
+
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF4A3A2A),
+            Color(0xFF765E42),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(
+                Icons.account_balance_wallet_outlined,
+                color: Colors.white,
+              ),
+              SizedBox(width: 10),
+              Text(
+                'Situation financière',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Solde restant',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            _formatAr(solde),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 30,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 22),
+          Row(
+            children: [
+              Expanded(
+                child: _summaryValue(
+                  'Total',
+                  _formatAr(total),
+                ),
+              ),
+              Expanded(
+                child: _summaryValue(
+                  'Déjà payé',
+                  _formatAr(paye),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
-}
 
-class _EcheanceCard extends StatelessWidget {
-  final EcheanceModel echeance;
-  final VoidCallback onPayer;
+  Widget _summaryValue(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 12,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
 
-  const _EcheanceCard({required this.echeance, required this.onPayer});
+  Widget _buildEcolageCard(
+    BuildContext context,
+    EcolageModel ecolage,
+    FormationProvider formationProvider,
+  ) {
+    final formation = formationProvider.formationById(
+      ecolage.formationId,
+    );
 
-  (String, Color) get _statutMeta => switch (echeance.statut) {
-        'PAYEE' => ('Payée', AppColors.ok),
-        'EN_ATTENTE' => ('En attente', AppColors.warn),
-        'EN_RETARD' => ('En retard', AppColors.danger),
-        _ => (echeance.statut, AppColors.muted),
-      };
+    final titre = formation?.titre ??
+        (ecolage.formationId > 0
+            ? 'Formation #${ecolage.formationId}'
+            : 'Formation');
 
-  @override
-  Widget build(BuildContext context) {
-    final (label, color) = _statutMeta;
+    
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: const Color(0xFFE6DED3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                IconTile(
-                  icon: Icons.calendar_month_outlined,
-                  color: color,
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0E8DC),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: const Icon(
+                    Icons.school_outlined,
+                    color: Color(0xFF806543),
+                  ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 13),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        echeance.moisLabel,
-                        style: Theme.of(context).textTheme.titleMedium,
+                        titre,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF2F2924),
+                        ),
                       ),
+                      const SizedBox(height: 5),
                       Text(
-                        'Limite : ${AppFormat.date(echeance.dateLimite)}',
-                        style: Theme.of(context).textTheme.bodySmall,
+                        'Montant total : ${_formatAr(ecolage.montantTotal)}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                     ],
                   ),
                 ),
-                Text(
-                  AppFormat.ar(echeance.montant),
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontFamily: 'Cormorant Garamond',
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
               ],
             ),
-            const SizedBox(height: 10),
-            Row(
+          ),
+          const Divider(
+            height: 1,
+            color: Color(0xFFEDE7DF),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                StatusChip(label: label, color: color),
-                const Spacer(),
-                if (echeance.payableNow)
-                  FilledButton(
-                    onPressed: onPayer,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.brown900,
-                      foregroundColor: AppColors.cream,
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                Row(
+                  children: [
+                    const Text(
+                      'Solde restant',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF5F574F),
                       ),
                     ),
-                    child: const Text(
-                      'Payer',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                    const Spacer(),
+                    Text(
+                      _formatAr(ecolage.soldeDu),
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: ecolage.estSolder
+                            ? const Color(0xFF3E7C5A)
+                            : const Color(0xFF9B5E25),
+                      ),
                     ),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PaiementSheet extends StatefulWidget {
-  final EcheanceModel echeance;
-  const _PaiementSheet({required this.echeance});
-
-  @override
-  State<_PaiementSheet> createState() => _PaiementSheetState();
-}
-
-class _PaiementSheetState extends State<_PaiementSheet> {
-  String _mode = 'MVOLA';
-  bool _isPaying = false;
-
-  Future<void> _confirmer() async {
-    setState(() => _isPaying = true);
-    try {
-      final result = await context.read<FinanceProvider>().payer(
-            echeanceId: widget.echeance.id,
-            montant: widget.echeance.montant,
-            modePaiement: _mode,
-          );
-      if (!mounted) return;
-      Navigator.of(context).pop();
-      await showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => _RecuDialog(paiement: result),
-      );
-      if (!mounted) return;
-      AppToast.show(context, 'Paiement validé avec succès', isOk: true);
-    } catch (e) {
-      if (!mounted) return;
-      AppToast.show(context, e.toString(), isError: true);
-    } finally {
-      if (mounted) setState(() => _isPaying = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          AppSpacing.page,
-          16,
-          AppSpacing.page,
-          16 + MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.cardBorder,
-                  borderRadius: BorderRadius.circular(2),
+                  ],
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text('Payer l\'échéance', style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 4),
-            Text(
-              '${widget.echeance.moisLabel} · ${AppFormat.ar(widget.echeance.montant)}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 18),
-            Text('Mode de paiement', style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _modes.map((m) {
-                final (value, label) = m;
-                final selected = _mode == value;
-                return ChoiceChip(
-                  label: Text(
-                    label,
+                const SizedBox(height: 18),
+                if (ecolage.estSolder)
+                  _buildPaidBadge()
+                else ...[
+                  const Text(
+                    'Échéances',
                     style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: selected ? AppColors.cream : AppColors.ink,
-                    ),
-                  ),
-                  selected: selected,
-                  showCheckmark: false,
-                  backgroundColor: AppColors.white,
-                  selectedColor: AppColors.brown900,
-                  side: BorderSide(
-                    color: selected ? AppColors.brown900 : AppColors.cardBorder,
-                  ),
-                  onSelected: (_) => setState(() => _mode = value),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _isPaying ? null : _confirmer,
-                icon: _isPaying
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.cream,
-                        ),
-                      )
-                    : const Icon(Icons.lock_outline),
-                label: Text(
-                    'Confirmer · ${AppFormat.ar(widget.echeance.montant)}'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Reçu de paiement stylisé (simulation du « ticket » de la maquette).
-class _RecuDialog extends StatelessWidget {
-  final PaiementModel paiement;
-  const _RecuDialog({required this.paiement});
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: AppColors.cream,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: const BoxDecoration(
-                color: AppColors.okBg,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.check_rounded, color: AppColors.ok, size: 34),
-            ),
-            const SizedBox(height: 14),
-            Text('Paiement validé', style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 18),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.cardBorder),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    'REÇU N° ${paiement.numeroRecu ?? '—'}',
-                    style: GoogleFonts.manrope(
-                      fontSize: 15,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.brown900,
+                      fontSize: 15,
+                      color: Color(0xFF2F2924),
                     ),
                   ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 10),
-                    child: Divider(color: AppColors.cardBorder),
+                  const SizedBox(height: 10),
+                  ...ecolage.echeances.map(
+                    (echeance) => _buildEcheanceCard(
+                      context,
+                      echeance,
+                    ),
                   ),
-                  _ligne(context, 'Montant', paiement.montantAr),
-                  _ligne(context, 'Mode', _modeLabel(paiement.modePaiement)),
-                  _ligne(context, 'Date', AppFormat.date(paiement.createdAt, full: true)),
-                  _ligne(context, 'Statut', paiement.statut == 'VALIDE' ? 'Validé' : 'En attente'),
                 ],
-              ),
-            ),
-            const SizedBox(height: 18),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Fermer'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _ligne(BuildContext context, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: Theme.of(context).textTheme.bodySmall),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w800,
-              color: AppColors.ink,
+              ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildPaidBadge() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEAF4ED),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: const Row(
+        children: [
+          Icon(
+            Icons.check_circle_outline,
+            color: Color(0xFF3E7C5A),
+          ),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Cette formation est entièrement réglée.',
+              style: TextStyle(
+                color: Color(0xFF3E7C5A),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEcheanceCard(
+    BuildContext context,
+    EcheanceModel echeance,
+  ) {
+    final payee = echeance.isPayee;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFAF8F5),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(
+          color: const Color(0xFFE9E1D8),
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: payee
+                      ? const Color(0xFFE8F2EB)
+                      : const Color(0xFFF2EADF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  payee
+                      ? Icons.check_rounded
+                      : Icons.calendar_month_outlined,
+                  size: 21,
+                  color: payee
+                      ? const Color(0xFF3E7C5A)
+                      : const Color(0xFF806543),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      echeance.moisLabel,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF332D27),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      echeance.statutLabel,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: echeance.isEnRetard
+                            ? const Color(0xFFB0483C)
+                            : payee
+                                ? const Color(0xFF3E7C5A)
+                                : Colors.grey.shade600,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                _formatAr(echeance.montant),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF332D27),
+                ),
+              ),
+            ],
+          ),
+          if (echeance.dateLimite != null) ...[
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Date limite : ${shortDate(echeance.dateLimite!)}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ),
+          ],
+          if (echeance.payableNow) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _showPaymentSheet(
+                  context,
+                  echeance,
+                ),
+                icon: const Icon(
+                  Icons.payment_rounded,
+                  size: 18,
+                ),
+                label: const Text('Payer cette échéance'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF806543),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showPaymentSheet(
+    BuildContext context,
+    EcheanceModel echeance,
+  ) async {
+    String modePaiement = 'MOBILE_MONEY';
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Container(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                20,
+                20,
+                20 + MediaQuery.of(context).viewInsets.bottom,
+              ),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  const Text(
+                    'Payer l’échéance',
+                    style: TextStyle(
+                      fontSize: 21,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF2F2924),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    echeance.moisLabel,
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7F3ED),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.payments_outlined,
+                          color: Color(0xFF806543),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            'Montant à payer',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          _formatAr(echeance.montant),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 17,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Mode de paiement',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  RadioListTile<String>(
+                    value: 'MOBILE_MONEY',
+                    groupValue: modePaiement,
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Mobile Money'),
+                    subtitle: const Text(
+                      'Paiement mobile',
+                    ),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setSheetState(() {
+                          modePaiement = value;
+                        });
+                      }
+                    },
+                  ),
+                  RadioListTile<String>(
+                    value: 'ESPECES',
+                    groupValue: modePaiement,
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Espèces'),
+                    subtitle: const Text(
+                      'Paiement au bureau',
+                    ),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setSheetState(() {
+                          modePaiement = value;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () async {
+                        Navigator.of(sheetContext).pop();
+
+                        await _payer(
+                          echeance: echeance,
+                          modePaiement: modePaiement,
+                        );
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF806543),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const Text(
+                        'Confirmer le paiement',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _payer({
+    required EcheanceModel echeance,
+    required String modePaiement,
+  }) async {
+    final finance = context.read<FinanceProvider>();
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      await finance.payer(
+        echeanceId: echeance.id,
+        montant: echeance.montant,
+        modePaiement: modePaiement,
+      );
+
+      if (!mounted) return;
+
+      Navigator.of(context).pop();
+
+      await showDialog<void>(
+        context: context,
+        builder: (_) => AlertDialog(
+          icon: const Icon(
+            Icons.check_circle,
+            color: Color(0xFF3E7C5A),
+            size: 48,
+          ),
+          title: const Text('Paiement enregistré'),
+          content: Text(
+            modePaiement == 'MOBILE_MONEY'
+                ? 'Votre paiement a été enregistré avec succès.'
+                : 'Votre demande de paiement en espèces a été enregistrée.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      Navigator.of(context).pop();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString(),
+          ),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    }
+  }
+
+  Widget _buildSectionTitle(
+    String title,
+    IconData icon,
+  ) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 21,
+          color: const Color(0xFF806543),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF2F2924),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatAr(double value) {
+    final number = value.round().toString();
+
+    final formatted = number.replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+      (match) => '${match[1]} ',
+    );
+
+    return '$formatted Ar';
   }
 }

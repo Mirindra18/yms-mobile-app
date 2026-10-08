@@ -1,5 +1,5 @@
-/// Modèles du module E-learning.
-/// Aligné sur les DTO Java et sécurisé contre les erreurs de typage JSON.
+// Modèles du module E-learning.
+// Aligné sur les DTO Java et sécurisé contre les erreurs de typage JSON.
 
 class ElearningFormation {
   final int id;

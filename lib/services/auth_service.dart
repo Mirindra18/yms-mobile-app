@@ -31,6 +31,10 @@ class AuthService {
     required String email,
     required String password,
     required String role,
+    required String adresse,
+    required String genre,
+    required String telephone,
+    required String formationSouhaitee,
   }) async {
     try {
       final response = await _apiClient.dio.post(
@@ -41,6 +45,10 @@ class AuthService {
           'email': email,
           'password': password,
           'role': role,
+          'adresse': adresse,
+          'genre': genre,
+          'telephone': telephone,
+          'formationSouhaitee': formationSouhaitee,
         },
       );
 
@@ -167,12 +175,6 @@ class AuthService {
   ) {
     final data = e.response?.data;
 
-    print('======================================');
-    print('ERREUR API');
-    print('STATUS : ${e.response?.statusCode}');
-    print('DATA   : ${e.response?.data}');
-    print('======================================');
-
     if (data is String && data.isNotEmpty) {
       return data;
     }
@@ -209,18 +211,6 @@ class AuthService {
   String _extractRegisterError(
     DioException e,
   ) {
-    print('');
-    print('==========================================');
-    print('       ERREUR INSCRIPTION YMS');
-    print('==========================================');
-    print('STATUS : ${e.response?.statusCode}');
-    print('URL    : ${e.requestOptions.uri}');
-    print('METHOD : ${e.requestOptions.method}');
-    print('DATA ENVOYÉE : ${e.requestOptions.data}');
-    print('RÉPONSE BACKEND : ${e.response?.data}');
-    print('==========================================');
-    print('');
-
     final data = e.response?.data;
 
     // ----------------------------------------------------------

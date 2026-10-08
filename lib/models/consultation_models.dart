@@ -1,6 +1,6 @@
-/// Modèles du module Consultations / RDV.
-/// Correspondent exactement aux DTO exposés par consultation-service
-/// (ConsultationController) : CreneauResponse, ConsultationResponse.
+// Modèles du module Consultations / RDV.
+// Correspondent exactement aux DTO exposés par consultation-service
+// (ConsultationController) : CreneauResponse, ConsultationResponse.
 
 enum StatutConsultation { enAttente, confirmee, terminee, annulee, reprogrammee }
 

@@ -15,6 +15,15 @@ Example for an Android emulator:
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8081
 ```
 
+For a physical Android phone, use the computer's LAN IP instead of
+`10.0.2.2` (for example, `http://192.168.1.20:8081`). The phone and computer
+must be on the same network, the backend must be running and reachable from the
+LAN, and the computer firewall must allow connections to port `8081`.
+
+```powershell
+flutter run --dart-define=API_BASE_URL=http://192.168.1.20:8081
+```
+
 The current completed vertical slice is identity: registration, login, secure
 JWT storage, restore-session, and profile read/update. Training, attendance,
 finance and learning APIs must be migrated one service at a time before their

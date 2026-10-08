@@ -1,6 +1,6 @@
-/// Modèles du module Notifications.
-/// Correspondent exactement aux DTO exposés par notification-service
-/// (NotificationController) : NotificationResponse, TypeNotification.
+// Modèles du module Notifications.
+// Correspondent exactement aux DTO exposés par notification-service
+// (NotificationController) : NotificationResponse, TypeNotification.
 
 enum TypeNotification {
   formation,

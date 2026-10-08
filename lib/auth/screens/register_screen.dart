@@ -1,546 +1,423 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-
-import '../../providers/auth_provider.dart';
-import '../../core/theme/app_theme.dart';
-import '../widgets/auth_brand_block.dart';
+import '/../providers/auth_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() =>
-      _RegisterScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final _registerFormKey =
-      GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
 
-  final _registerPrenomController =
-      TextEditingController();
+  final _prenomController = TextEditingController();
+  final _nomController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _adresseController = TextEditingController();
+  final _telephoneController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
 
-  final _registerNomController =
-      TextEditingController();
-
-  final _registerEmailController =
-      TextEditingController();
-
-  final _registerPasswordController =
-      TextEditingController();
-
-  final _registerConfirmPasswordController =
-      TextEditingController();
-
-  bool _obscureRegisterPassword = true;
+  String? _selectedFormation;
+  String _selectedGenre = 'Homme';
+  String _selectedRole = 'ETUDIANT'; // Rôle par défaut
+  bool _isLoading = false;
+  bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
-  String _selectedRole = 'ROLE_APPRENANT';
+  final List<String> _formations = [
+    'Licence en Informatique (Web & Mobile)',
+    'Licence en Gestion & Management',
+    'Master en Génie Logiciel',
+    'Master en Intelligence Artificielle',
+  ];
+
+  final Map<String, String> _rolesMap = {
+    'ETUDIANT': 'Étudiant',
+    'FORMATEUR': 'Formateur',
+    'ADMIN': 'Administrateur',
+  };
 
   @override
   void dispose() {
-    _registerPrenomController.dispose();
-    _registerNomController.dispose();
-    _registerEmailController.dispose();
-    _registerPasswordController.dispose();
-    _registerConfirmPasswordController.dispose();
-
+    _prenomController.dispose();
+    _nomController.dispose();
+    _emailController.dispose();
+    _adresseController.dispose();
+    _telephoneController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> _handleRegister() async {
-    if (!_registerFormKey.currentState!.validate()) {
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Les mots de passe ne correspondent pas'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
       return;
     }
 
-    final auth = context.read<AuthProvider>();
+    setState(() => _isLoading = true);
 
-    final message = await auth.register(
-      nom: _registerNomController.text.trim(),
-      prenom: _registerPrenomController.text.trim(),
-      email: _registerEmailController.text.trim(),
-      password: _registerPasswordController.text,
-      role: _selectedRole,
-    );
-
-    if (!mounted) return;
-
-    if (message == null) {
-      _showMessage(
-        auth.errorMessage ??
-            'Erreur lors de l\'inscription',
-        isError: true,
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      
+      await authProvider.register(
+        nom: _nomController.text.trim(),
+        prenom: _prenomController.text.trim(),
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        role: _selectedRole, // Utilisation du rôle sélectionné
+        adresse: _adresseController.text.trim(),
+        genre: _selectedGenre,
+        telephone: _telephoneController.text.trim(),
+        formationSouhaitee: _selectedFormation ?? 'Non spécifiée',
       );
 
-      return;
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Compte créé avec succès ! En attente d\'activation.'),
+          backgroundColor: Color.from(alpha: 1, red: 0.773, green: 0.627, blue: 0.349),
+        ),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-
-    _showMessage(
-      message,
-      isError: false,
-    );
-
-    // Après une inscription réussie,
-    // retour vers l'écran de connexion.
-    Navigator.pop(context);
   }
 
-  void _showMessage(
-    String message, {
-    required bool isError,
+  InputDecoration _buildInputDecoration({
+    required String label,
+    required IconData icon,
+    String? hintText,
+    Widget? suffixIcon,
   }) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor:
-            isError ? AppColors.danger : AppColors.ok,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+    return InputDecoration(
+      labelText: label,
+      hintText: hintText,
+      labelStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+      hintStyle: TextStyle(color: Colors.grey[600]),
+      prefixIcon: Icon(icon, color: const Color(0xFFC5A059)),
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: const Color(0xFF1E222B),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey[800]!, width: 1),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFC5A059), width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLoading =
-        context.watch<AuthProvider>().isLoading;
-
     return Scaffold(
-      backgroundColor: AppColors.cream,
+      backgroundColor: const Color(0xFF0D0B08),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF0D0B08),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Color(0xFFC5A059)),
+        title: const Text(
+          'Inscription YMS',
+          style: TextStyle(color: Color(0xFFC5A059), fontWeight: FontWeight.bold),
+        ),
+      ),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 20,
-            ),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 460,
-              ),
-              child: Column(
-                mainAxisAlignment:
-                    MainAxisAlignment.center,
-                children: [
-                  const AuthBrandBlock(),
-
-                  const SizedBox(height: 22),
-
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(
-                      20,
-                      24,
-                      20,
-                      24,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius:
-                          BorderRadius.circular(28),
-                      border: Border.all(
-                        color: AppColors.cardBorder,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.brown950
-                              .withValues(alpha: 0.10),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Prénom & Nom
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _prenomController,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: _buildInputDecoration(
+                          label: 'Prénom',
+                          icon: Icons.person_outline,
+                          hintText: 'Nomena',
                         ),
-                      ],
+                        validator: (v) => v!.isEmpty ? 'Champ requis' : null,
+                      ),
                     ),
-                    child: Form(
-                      key: _registerFormKey,
-                      child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            'Créer mon compte',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineSmall,
-                          ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _nomController,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: _buildInputDecoration(
+                          label: 'Nom',
+                          icon: Icons.person,
+                          hintText: 'Ravel',
+                        ),
+                        validator: (v) => v!.isEmpty ? 'Champ requis' : null,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
 
-                          const SizedBox(height: 4),
+                // Email
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: _buildInputDecoration(
+                    label: 'Adresse e-mail',
+                    icon: Icons.email_outlined,
+                    hintText: 'vous@example.mg',
+                  ),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Veuillez entrer un email';
+                    if (!v.contains('@')) return 'Email invalide';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
 
-                          Text(
-                            'Rejoignez la communauté YMS',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall,
-                          ),
+                // Rôle (Sélection)
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedRole,
+                  dropdownColor: const Color(0xFF1E222B),
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  decoration: _buildInputDecoration(
+                    label: 'Rôle',
+                    icon: Icons.badge_outlined,
+                  ),
+                  items: _rolesMap.entries.map((entry) {
+                    return DropdownMenuItem<String>(
+                      value: entry.key,
+                      child: Text(entry.value, style: const TextStyle(color: Colors.white)),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _selectedRole = newValue!;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
 
-                          const SizedBox(height: 20),
+                // Adresse
+                TextFormField(
+                  controller: _adresseController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: _buildInputDecoration(
+                    label: 'Adresse',
+                    icon: Icons.location_on_outlined,
+                    hintText: 'Votre adresse',
+                  ),
+                  validator: (v) => v!.isEmpty ? 'Champ requis' : null,
+                ),
+                const SizedBox(height: 16),
 
-                          // PRÉNOM ET NOM
-                          LayoutBuilder(
-                            builder:
-                                (context, constraints) {
-                              if (constraints.maxWidth <
-                                  330) {
-                                return Column(
-                                  children: [
-                                    _buildPrenomField(),
-                                    const SizedBox(
-                                      height: 12,
-                                    ),
-                                    _buildNomField(),
-                                  ],
-                                );
-                              }
+                // Téléphone
+                TextFormField(
+                  controller: _telephoneController,
+                  keyboardType: TextInputType.phone,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: _buildInputDecoration(
+                    label: 'Téléphone',
+                    icon: Icons.phone_outlined,
+                    hintText: '034 00 000 00',
+                  ),
+                  validator: (v) => v!.isEmpty ? 'Champ requis' : null,
+                ),
+                const SizedBox(height: 16),
 
-                              return Row(
-                                children: [
-                                  Expanded(
-                                    child:
-                                        _buildPrenomField(),
-                                  ),
-                                  const SizedBox(
-                                    width: 10,
-                                  ),
-                                  Expanded(
-                                    child:
-                                        _buildNomField(),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
+                // Formation souhaitée
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedFormation,
+                  dropdownColor: const Color(0xFF1E222B),
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  decoration: _buildInputDecoration(
+                    label: 'Formation souhaitée',
+                    icon: Icons.school_outlined,
+                  ),
+                  hint: const Text('Choisir une formation', style: TextStyle(color: Colors.grey)),
+                  items: _formations.map((String formation) {
+                    return DropdownMenuItem<String>(
+                      value: formation,
+                      child: Text(formation, style: const TextStyle(color: Colors.white)),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _selectedFormation = newValue;
+                    });
+                  },
+                  validator: (v) => v == null ? 'Veuillez choisir une formation' : null,
+                ),
+                const SizedBox(height: 16),
 
-                          const SizedBox(height: 12),
+                // Genre
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedGenre,
+                  dropdownColor: const Color(0xFF1E222B),
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  decoration: _buildInputDecoration(
+                    label: 'Genre',
+                    icon: Icons.wc_outlined,
+                  ),
+                  items: ['Homme', 'Femme', 'Autre'].map((String genre) {
+                    return DropdownMenuItem<String>(
+                      value: genre,
+                      child: Text(genre, style: const TextStyle(color: Colors.white)),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _selectedGenre = newValue!;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
 
-                          // EMAIL
-                          TextFormField(
-                            controller:
-                                _registerEmailController,
-                            keyboardType:
-                                TextInputType.emailAddress,
-                            validator: (value) {
-                              if (value == null ||
-                                  value.trim().isEmpty) {
-                                return 'Saisissez un email';
-                              }
+                // Mot de passe
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: _buildInputDecoration(
+                    label: 'Mot de passe',
+                    icon: Icons.lock_outline,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        color: Colors.grey,
+                      ),
+                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    ),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.length < 6) return 'Minimum 6 caractères requis';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
 
-                              if (!RegExp(
-                                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                              ).hasMatch(value.trim())) {
-                                return 'Email invalide';
-                              }
+                // Confirmer le mot de passe
+                TextFormField(
+                  controller: _confirmPasswordController,
+                  obscureText: _obscureConfirmPassword,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: _buildInputDecoration(
+                    label: 'Confirmer le mot de passe',
+                    icon: Icons.lock_outline,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                        color: Colors.grey,
+                      ),
+                      onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                    ),
+                  ),
+                  validator: (v) => v!.isEmpty ? 'Veuillez confirmer votre mot de passe' : null,
+                ),
+                const SizedBox(height: 20),
 
-                              return null;
-                            },
-                            decoration:
-                                const InputDecoration(
-                              hintText: 'Adresse email',
-                              prefixIcon: Icon(
-                                Icons.email_outlined,
-                                color:
-                                    AppColors.brown700,
-                              ),
+                // Encadré d'information
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A1A),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFC5A059).withValues(alpha: 0.5), width: 1),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.verified_user_outlined, color: Color(0xFFC5A059), size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Votre compte sera activé après vérification de votre demande par l\'administration YMS.',
+                          style: TextStyle(color: Colors.grey[300], fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Bouton Envoyer ma demande
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _submitForm,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFC5A059),
+                      foregroundColor: const Color(0xFF0D0B08),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 2,
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Color(0xFF0D0B08),
+                              strokeWidth: 2.5,
                             ),
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          // RÔLE
-                          DropdownButtonFormField<String>(
-                            initialValue:
-                                _selectedRole,
-                            decoration:
-                                const InputDecoration(
-                              hintText:
-                                  'Choisissez votre rôle',
-                              prefixIcon: Icon(
-                                Icons.badge_outlined,
-                                color:
-                                    AppColors.brown700,
-                              ),
-                            ),
-                            items: const [
-                              DropdownMenuItem(
-                                value:
-                                    'ROLE_APPRENANT',
-                                child:
-                                    Text('Apprenant'),
-                              ),
-                              DropdownMenuItem(
-                                value:
-                                    'ROLE_FORMATEUR',
-                                child:
-                                    Text('Formateur'),
-                              ),
-                            ],
-                            onChanged: isLoading
-                                ? null
-                                : (value) {
-                                    if (value ==
-                                        null) {
-                                      return;
-                                    }
-
-                                    setState(() {
-                                      _selectedRole =
-                                          value;
-                                    });
-                                  },
-                            validator: (value) {
-                              if (value == null ||
-                                  value.isEmpty) {
-                                return 'Veuillez choisir votre rôle';
-                              }
-
-                              return null;
-                            },
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          // MOT DE PASSE
-                          TextFormField(
-                            controller:
-                                _registerPasswordController,
-                            obscureText:
-                                _obscureRegisterPassword,
-                            validator: (value) {
-                              if (value == null ||
-                                  value.isEmpty) {
-                                return 'Saisissez un mot de passe';
-                              }
-
-                              if (!RegExp(
-                                r'^(?=.*\d).{12,}$',
-                              ).hasMatch(value)) {
-                                return 'Au moins 12 caractères et 1 chiffre';
-                              }
-
-                              return null;
-                            },
-                            decoration:
-                                InputDecoration(
-                              hintText:
-                                  'Mot de passe',
-                              prefixIcon:
-                                  const Icon(
-                                Icons.lock_outline,
-                                color:
-                                    AppColors.brown700,
-                              ),
-                              suffixIcon:
-                                  IconButton(
-                                icon: Icon(
-                                  _obscureRegisterPassword
-                                      ? Icons
-                                          .visibility_outlined
-                                      : Icons
-                                          .visibility_off_outlined,
-                                  color:
-                                      AppColors.brown700,
-                                  size: 20,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _obscureRegisterPassword =
-                                        !_obscureRegisterPassword;
-                                  });
-                                },
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          // CONFIRMATION
-                          TextFormField(
-                            controller:
-                                _registerConfirmPasswordController,
-                            obscureText:
-                                _obscureConfirmPassword,
-                            validator: (value) {
-                              if (value == null ||
-                                  value.isEmpty) {
-                                return 'Confirmez votre mot de passe';
-                              }
-
-                              if (value !=
-                                  _registerPasswordController
-                                      .text) {
-                                return 'Les mots de passe ne correspondent pas';
-                              }
-
-                              return null;
-                            },
-                            decoration:
-                                InputDecoration(
-                              hintText:
-                                  'Confirmer le mot de passe',
-                              prefixIcon:
-                                  const Icon(
-                                Icons
-                                    .lock_reset_outlined,
-                                color:
-                                    AppColors.brown700,
-                              ),
-                              suffixIcon:
-                                  IconButton(
-                                icon: Icon(
-                                  _obscureConfirmPassword
-                                      ? Icons
-                                          .visibility_outlined
-                                      : Icons
-                                          .visibility_off_outlined,
-                                  color:
-                                      AppColors.brown700,
-                                  size: 20,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _obscureConfirmPassword =
-                                        !_obscureConfirmPassword;
-                                  });
-                                },
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 18),
-
-                          // BOUTON INSCRIPTION
-                          ElevatedButton(
-                            onPressed: isLoading
-                                ? null
-                                : _handleRegister,
-                            child: isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child:
-                                        CircularProgressIndicator(
-                                      color:
-                                          AppColors.cream,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text(
-                                    'Créer mon compte',
-                                  ),
-                          ),
-
-                          const SizedBox(height: 14),
-
-                          // RETOUR CONNEXION
-                          Wrap(
-                            alignment:
-                                WrapAlignment.center,
-                            crossAxisAlignment:
-                                WrapCrossAlignment.center,
+                          )
+                        : const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                'Vous avez déjà un compte ? ',
-                                style:
-                                    GoogleFonts.manrope(
-                                  fontSize: 12.5,
-                                  color:
-                                      AppColors.muted,
+                                'Envoyer ma demande',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              GestureDetector(
-                                onTap: isLoading
-                                    ? null
-                                    : () {
-                                        Navigator.pop(
-                                          context,
-                                        );
-                                      },
-                                child: Text(
-                                  'Se connecter',
-                                  style:
-                                      GoogleFonts.manrope(
-                                    fontSize: 12.5,
-                                    fontWeight:
-                                        FontWeight.w800,
-                                    color:
-                                        AppColors.brown900,
-                                    decoration:
-                                        TextDecoration
-                                            .underline,
-                                  ),
-                                ),
-                              ),
+                              SizedBox(width: 8),
+                              Icon(Icons.arrow_forward, size: 20),
                             ],
                           ),
-                        ],
-                      ),
-                    ),
                   ),
-
-                  const SizedBox(height: 18),
-
-                  Text(
-                    'Votre identification unique et votre email',
-                    style: GoogleFonts.manrope(
-                      fontSize: 12,
-                      color: AppColors.muted,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 20),
+              ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPrenomField() {
-    return TextFormField(
-      controller: _registerPrenomController,
-      keyboardType: TextInputType.name,
-      textCapitalization:
-          TextCapitalization.words,
-      validator: (value) {
-        if (value == null ||
-            value.trim().isEmpty) {
-          return 'Prénom requis';
-        }
-
-        return null;
-      },
-      decoration: const InputDecoration(
-        hintText: 'Prénom',
-        prefixIcon: Icon(
-          Icons.person_outline,
-          color: AppColors.brown700,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNomField() {
-    return TextFormField(
-      controller: _registerNomController,
-      keyboardType: TextInputType.name,
-      textCapitalization:
-          TextCapitalization.words,
-      validator: (value) {
-        if (value == null ||
-            value.trim().isEmpty) {
-          return 'Nom requis';
-        }
-
-        return null;
-      },
-      decoration: const InputDecoration(
-        hintText: 'Nom',
-        prefixIcon: Icon(
-          Icons.badge_outlined,
-          color: AppColors.brown700,
         ),
       ),
     );
