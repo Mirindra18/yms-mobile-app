@@ -19,19 +19,11 @@ class AuthProvider extends ChangeNotifier {
   String? errorMessage;
   bool isLoading = false;
 
-  Future<void> checkAuthStatus() async {
-    final loggedIn = await _authService.isLoggedIn();
-    if (loggedIn) {
-      try {
-        await _loadProfile();
-      } catch (_) {
-        status = AuthStatus.unauthenticated;
-        notifyListeners();
-      }
-    } else {
-      status = AuthStatus.unauthenticated;
-      notifyListeners();
-    }
+  Future<void> requireLoginAtStartup() async {
+    await _authService.logout();
+    currentUser = null;
+    status = AuthStatus.unauthenticated;
+    notifyListeners();
   }
 
   /// Inscription. Ne connecte PAS automatiquement (le backend ne renvoie
@@ -128,17 +120,4 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _loadProfile() async {
-    try {
-      currentUser = await _authService.getCurrentUser();
-      status = AuthStatus.authenticated;
-      notifyListeners();
-    } catch (e) {
-      await _authService.logout();
-      currentUser = null;
-      status = AuthStatus.unauthenticated;
-      notifyListeners();
-      rethrow;
-    }
-  }
 }

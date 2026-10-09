@@ -27,26 +27,33 @@ class FormationProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response =
-          await _apiClient.dio.get('/api/formations');
+      final response = await _apiClient.dio.get('/api/formations');
 
       final data = response.data;
+      final List<dynamic>? items;
 
       if (data is List) {
-        formations = data
-            .whereType<Map>()
-            .map(
-              (e) => FormationModel.fromJson(
-                Map<String, dynamic>.from(e),
-              ),
-            )
-            .toList();
+        items = data;
+      } else if (data is Map && data['content'] is List) {
+        items = data['content'] as List<dynamic>;
+      } else if (data is Map && data['data'] is List) {
+        items = data['data'] as List<dynamic>;
+      } else {
+        throw const FormatException(
+          'Format de réponse des formations non reconnu.',
+        );
       }
+
+      formations = items
+          .whereType<Map>()
+          .map(
+            (item) => FormationModel.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList();
+    } on FormatException catch (e) {
+      errorMessage = e.message;
     } on DioException catch (e) {
-      errorMessage = _extractError(
-        e,
-        'Impossible de charger les formations.',
-      );
+      errorMessage = _extractError(e, 'Impossible de charger les formations.');
     } finally {
       isLoading = false;
       notifyListeners();
@@ -63,8 +70,7 @@ class FormationProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response =
-          await _apiClient.dio.get('/api/inscriptions/me');
+      final response = await _apiClient.dio.get('/api/inscriptions/me');
 
       final data = response.data;
 
@@ -79,9 +85,7 @@ class FormationProvider extends ChangeNotifier {
           if (formationId is num) {
             ids.add(formationId.toInt());
           } else if (formationId != null) {
-            final parsed = int.tryParse(
-              formationId.toString(),
-            );
+            final parsed = int.tryParse(formationId.toString());
 
             if (parsed != null) {
               ids.add(parsed);
@@ -107,21 +111,16 @@ class FormationProvider extends ChangeNotifier {
   }
 
   /// Nombre de formations auxquelles l'utilisateur est inscrit.
-  int get nombreFormationsInscrites =>
-      _mesFormationIds.length;
+  int get nombreFormationsInscrites => _mesFormationIds.length;
 
   /// IDs des formations de l'utilisateur.
-  Set<int> get mesFormationIds =>
-      Set.unmodifiable(_mesFormationIds);
+  Set<int> get mesFormationIds => Set.unmodifiable(_mesFormationIds);
 
   /// Retourne les formations disponibles auxquelles
   /// l'utilisateur est inscrit.
   List<FormationModel> get mesFormations {
     return formations
-        .where(
-          (formation) =>
-              _mesFormationIds.contains(formation.id),
-        )
+        .where((formation) => _mesFormationIds.contains(formation.id))
         .toList();
   }
 
@@ -135,14 +134,10 @@ class FormationProvider extends ChangeNotifier {
     return null;
   }
 
-  String _extractError(
-    DioException e,
-    String fallback,
-  ) {
+  String _extractError(DioException e, String fallback) {
     final data = e.response?.data;
 
-    if (data is Map &&
-        data['message'] is String) {
+    if (data is Map && data['message'] is String) {
       return data['message'] as String;
     }
 

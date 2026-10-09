@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
 import 'providers/auth_provider.dart';
 import 'providers/elearning_provider.dart';
 import 'providers/finance_provider.dart';
 import 'providers/formation_provider.dart';
+import 'providers/formateur_provider.dart';
 import 'providers/presence_provider.dart';
 import 'auth/screens/login_screen.dart';
 import 'routing/role_router.dart';
@@ -13,9 +15,14 @@ import 'services/elearning_service.dart';
 import '../../core/theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('fr_FR');
+
   final apiClient = ApiClient();
-  GoogleFonts.config.allowRuntimeFetching = false;
+  // No bundled font files are available in the app assets, so runtime fetching
+  // is required for the branded Google Fonts used across the UI.
+  GoogleFonts.config.allowRuntimeFetching = true;
 
   runApp(
     MultiProvider(
@@ -23,6 +30,7 @@ void main() {
         Provider<ApiClient>.value(value: apiClient),
         ChangeNotifierProvider(create: (_) => AuthProvider(apiClient)),
         ChangeNotifierProvider(create: (_) => FormationProvider(apiClient)),
+        ChangeNotifierProvider(create: (_) => FormateurProvider()),
         ChangeNotifierProvider(create: (_) => FinanceProvider(apiClient)),
         ChangeNotifierProvider(create: (_) => PresenceProvider(apiClient)),
         ChangeNotifierProvider(
@@ -61,7 +69,7 @@ class _AuthGateState extends State<AuthGate> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AuthProvider>().checkAuthStatus();
+      context.read<AuthProvider>().requireLoginAtStartup();
     });
   }
 

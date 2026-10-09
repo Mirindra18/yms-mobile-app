@@ -37,11 +37,13 @@ class FinanceProvider extends ChangeNotifier {
     required int echeanceId,
     required double montant,
     required String modePaiement,
+    required String referenceTransaction,
   }) async {
     final paiement = await _service.payer(
       echeanceId: echeanceId,
       montant: montant,
       modePaiement: modePaiement,
+      referenceTransaction: referenceTransaction,
     );
     await load();
     return paiement;

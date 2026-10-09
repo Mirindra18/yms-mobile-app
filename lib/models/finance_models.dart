@@ -15,6 +15,9 @@ class EcheanceModel {
   final double montant;
   final DateTime? dateLimite;
   final String statut;
+  final bool paiementEnAttente;
+  final String? referenceTransaction;
+  final String? modePaiement;
 
   const EcheanceModel({
     required this.id,
@@ -22,6 +25,9 @@ class EcheanceModel {
     this.montant = 0,
     this.dateLimite,
     this.statut = 'EN_ATTENTE',
+    this.paiementEnAttente = false,
+    this.referenceTransaction,
+    this.modePaiement,
   });
 
   factory EcheanceModel.fromJson(Map<String, dynamic> json) => EcheanceModel(
@@ -30,6 +36,9 @@ class EcheanceModel {
         montant: (json['montant'] as num?)?.toDouble() ?? 0,
         dateLimite: _tryDate(json['dateLimite']),
         statut: (json['statut'] as String?) ?? 'EN_ATTENTE',
+        paiementEnAttente: json['paiementEnAttente'] as bool? ?? false,
+        referenceTransaction: json['referenceTransaction'] as String?,
+        modePaiement: json['modePaiement'] as String?,
       );
 
   bool get isPayee => statut == 'PAYEE';
@@ -100,6 +109,7 @@ class PaiementModel {
   final double montant;
   final String modePaiement;
   final String statut;
+  final String? referenceTransaction;
   final String? numeroRecu;
   final DateTime? createdAt;
 
@@ -109,6 +119,7 @@ class PaiementModel {
     this.montant = 0,
     this.modePaiement = '',
     this.statut = 'EN_ATTENTE',
+    this.referenceTransaction,
     this.numeroRecu,
     this.createdAt,
   });
@@ -119,6 +130,7 @@ class PaiementModel {
         montant: (json['montant'] as num?)?.toDouble() ?? 0,
         modePaiement: (json['modePaiement'] as String?) ?? '',
         statut: (json['statut'] as String?) ?? 'EN_ATTENTE',
+        referenceTransaction: json['referenceTransaction'] as String?,
         numeroRecu: json['numeroRecu'] as String?,
         createdAt: _tryDate(json['createdAt']),
       );

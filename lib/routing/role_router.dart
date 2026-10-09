@@ -18,7 +18,7 @@ class RoleRouter {
     }
 
     if (user.roles.contains('ROLE_FORMATEUR')) {
-      return const FormateurShell();
+      return FormateurShell(user: user);
     }
 
     if (user.roles.contains('ROLE_APPRENANT')) {

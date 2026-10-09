@@ -101,12 +101,14 @@ class FinanceService {
     required int echeanceId,
     required double montant,
     required String modePaiement,
+    required String referenceTransaction,
   }) async {
     try {
       final requestData = {
         'echeanceId': echeanceId,
         'montant': montant,
         'modePaiement': modePaiement,
+        'referenceTransaction': referenceTransaction.trim(),
       };
 
       debugPrint('========================================');

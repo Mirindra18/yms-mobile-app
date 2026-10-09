@@ -6,6 +6,7 @@ import '../../providers/elearning_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/common.dart';
 import 'elearning_detail_screen.dart';
+import 'quiz_list_screen.dart';
 
 /// Liste des formations en ligne (e-learning).
 class ElearningScreen extends StatefulWidget {
@@ -53,9 +54,7 @@ class _ElearningScreenState extends State<ElearningScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.cream,
-      appBar: AppBar(
-        title: const Text('E-learning'),
-      ),
+      appBar: AppBar(title: const Text('E-learning')),
       body: RefreshIndicator(
         onRefresh: provider.loadFormations,
         child: _buildBody(provider),
@@ -64,34 +63,103 @@ class _ElearningScreenState extends State<ElearningScreen> {
   }
 
   Widget _buildBody(ElearningProvider provider) {
-    if (provider.isLoading && provider.formations.isEmpty) {
-      return const CustomScrollView(
-        slivers: [SliverFillRemaining(child: AppLoading())],
-      );
-    }
-    if (provider.errorMessage != null && provider.formations.isEmpty) {
-      return AppErrorState(
-        message: provider.errorMessage!,
-        onRetry: provider.loadFormations,
-      );
-    }
-    if (provider.formations.isEmpty) {
-      return const AppEmptyState(
-        icon: Icons.video_library_outlined,
-        title: 'Aucun parcours en ligne',
-        subtitle:
-            'Les parcours e-learning apparaîtront ici dès leur publication.',
-      );
-    }
-
-    return ListView.separated(
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(AppSpacing.page),
-      itemCount: provider.formations.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
-      itemBuilder: (context, i) {
-        final formation = provider.formations[i];
-        return _ElearningCard(formation: formation);
-      },
+      children: [
+        _QuizAccessCard(
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const QuizListScreen())),
+        ),
+        const SizedBox(height: 20),
+        if (provider.isLoading && provider.formations.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 48),
+            child: AppLoading(),
+          )
+        else if (provider.errorMessage != null && provider.formations.isEmpty)
+          AppErrorState(
+            message: provider.errorMessage!,
+            onRetry: provider.loadFormations,
+          )
+        else if (provider.formations.isEmpty)
+          const AppEmptyState(
+            icon: Icons.video_library_outlined,
+            title: 'Aucun parcours en ligne',
+            subtitle:
+                'Les parcours e-learning apparaîtront ici dès leur publication.',
+          )
+        else ...[
+          Text('Vos parcours', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 12),
+          ...provider.formations.map(
+            (formation) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _ElearningCard(formation: formation),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _QuizAccessCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _QuizAccessCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [AppColors.brown800, AppColors.brown950],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.quiz_outlined, color: AppColors.gold, size: 30),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Mes quiz',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: AppColors.cream,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'Évaluez vos connaissances',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.goldSoft,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: AppColors.gold,
+                size: 17,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -123,8 +191,10 @@ class _ElearningCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(formation.titre,
-                        style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      formation.titre,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       formation.description,

@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../models/presence_model.dart';
 import '../models/presence_models.dart';
 import 'api_client.dart';
+import 'formateur_config.dart';
 
 class PresenceServiceException implements Exception {
   final String message;
@@ -29,6 +30,9 @@ class PresenceService {
 
   PresenceService(this._apiClient);
 
+  String _presenceEndpoint(String path) =>
+      Uri.parse(FormateurConfig.presenceBaseUrl).resolve(path).toString();
+
   // ============================================================
   // QR CODE
   // ============================================================
@@ -37,38 +41,30 @@ class PresenceService {
   ///
   /// Backend :
   /// POST /api/presences/qr/valider?token=...
-  Future<PresenceModel> validerPresenceParQrCode(
-    String contenuQrCode,
-  ) async {
+  Future<PresenceModel> validerPresenceParQrCode(String contenuQrCode) async {
     if (contenuQrCode.trim().isEmpty) {
-      throw PresenceServiceException(
-        'Le QR Code est vide.',
-      );
+      throw PresenceServiceException('Le QR Code est vide.');
     }
 
     try {
+      final scannedValue = contenuQrCode.trim();
+      final scannedUri = Uri.tryParse(scannedValue);
+      final token = scannedUri?.queryParameters['token'] ?? scannedValue;
       final response = await _apiClient.dio.post(
-        '/api/presences/qr/valider',
-        queryParameters: {
-          'token': contenuQrCode.trim(),
-        },
+        _presenceEndpoint('/api/presences/qr/valider'),
+        queryParameters: {'token': token},
       );
 
       final data = response.data;
 
       if (data is! Map<String, dynamic>) {
-        throw PresenceServiceException(
-          'Réponse invalide du serveur.',
-        );
+        throw PresenceServiceException('Réponse invalide du serveur.');
       }
 
       return PresenceModel.fromJson(data);
     } on DioException catch (e) {
       throw PresenceServiceException(
-        _extractError(
-          e,
-          'Impossible d\'enregistrer la présence.',
-        ),
+        _extractError(e, 'Impossible d\'enregistrer la présence.'),
       );
     }
   }
@@ -85,7 +81,7 @@ class PresenceService {
   Future<List<PresenceModel>> listerMonHistorique() async {
     try {
       final response = await _apiClient.dio.get(
-        '/api/presences/me',
+        _presenceEndpoint('/api/presences/me'),
       );
 
       final data = response.data;
@@ -96,16 +92,11 @@ class PresenceService {
 
       return data
           .whereType<Map<String, dynamic>>()
-          .map(
-            (item) => PresenceModel.fromJson(item),
-          )
+          .map((item) => PresenceModel.fromJson(item))
           .toList();
     } on DioException catch (e) {
       throw PresenceServiceException(
-        _extractError(
-          e,
-          'Impossible de charger votre historique de présence.',
-        ),
+        _extractError(e, 'Impossible de charger votre historique de présence.'),
       );
     }
   }
@@ -118,7 +109,7 @@ class PresenceService {
   Future<List<PresenceEntry>> getMesPresences() async {
     try {
       final response = await _apiClient.dio.get(
-        '/api/presences/me',
+        _presenceEndpoint('/api/presences/me'),
       );
 
       final data = response.data;
@@ -129,16 +120,11 @@ class PresenceService {
 
       return data
           .whereType<Map<String, dynamic>>()
-          .map(
-            (item) => PresenceEntry.fromJson(item),
-          )
+          .map((item) => PresenceEntry.fromJson(item))
           .toList();
     } on DioException catch (e) {
       throw PresenceServiceException(
-        _extractError(
-          e,
-          'Impossible de charger vos présences.',
-        ),
+        _extractError(e, 'Impossible de charger vos présences.'),
       );
     }
   }
@@ -158,7 +144,7 @@ class PresenceService {
   Future<List<dynamic>> getTodayStatus() async {
     try {
       final response = await _apiClient.dio.get(
-        '/api/presences/me/status-today',
+        _presenceEndpoint('/api/presences/me/status-today'),
       );
 
       final data = response.data;
@@ -170,10 +156,7 @@ class PresenceService {
       return data;
     } on DioException catch (e) {
       throw PresenceServiceException(
-        _extractError(
-          e,
-          'Impossible de charger le statut des séances.',
-        ),
+        _extractError(e, 'Impossible de charger le statut des séances.'),
       );
     }
   }
@@ -182,10 +165,7 @@ class PresenceService {
   // GESTION DES ERREURS
   // ============================================================
 
-  String _extractError(
-    DioException error,
-    String fallback,
-  ) {
+  String _extractError(DioException error, String fallback) {
     final statusCode = error.response?.statusCode;
     final data = error.response?.data;
 
@@ -202,8 +182,7 @@ class PresenceService {
 
       final errorMessage = data['error'];
 
-      if (errorMessage is String &&
-          errorMessage.trim().isNotEmpty) {
+      if (errorMessage is String && errorMessage.trim().isNotEmpty) {
         return errorMessage;
       }
     }
